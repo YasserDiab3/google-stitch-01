@@ -20,10 +20,12 @@ import {
   listPermitsToWork,
   listManagedUsers,
   listWorkforceModule,
+  lookupClinicEmployee,
   openPermitToWorkEntry,
   updateManagedUserEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type ClinicEmployeeLookup,
   type ClinicRecordRow,
   type ManagedUserRow,
   type PermitMetaPayload,
@@ -94,12 +96,15 @@ type ManagedUserFormState = {
 };
 
 type ClinicFormState = {
+  employeeCode: string;
   patientName: string;
   visitDate: string;
   caseType: string;
   diagnosis: string;
   treatment: string;
 };
+
+type ClinicTab = "visits" | "medications" | "history";
 
 const loginCopy = {
   ar: {
@@ -1800,6 +1805,7 @@ function ClinicModulePage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState<ClinicFormState>({
+    employeeCode: "",
     patientName: "",
     visitDate: "",
     caseType: "مراجعة دورية",
@@ -1845,6 +1851,7 @@ function ClinicModulePage({
 
       setRows((current) => [payload.data, ...current]);
       setForm({
+        employeeCode: "",
         patientName: "",
         visitDate: "",
         caseType: "مراجعة دورية",
@@ -2023,6 +2030,429 @@ function ClinicModulePage({
               </div>
             ))}
             {!recentRows.length ? <div className="empty-state">لا توجد سجلات عيادة بعد.</div> : null}
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function ClinicModuleWorkspace({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [rows, setRows] = useState<ClinicRecordRow[]>([]);
+  const [activeTab, setActiveTab] = useState<ClinicTab>("visits");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [lookupError, setLookupError] = useState("");
+  const [employeeProfile, setEmployeeProfile] = useState<ClinicEmployeeLookup | null>(null);
+  const [form, setForm] = useState<ClinicFormState>({
+    employeeCode: "",
+    patientName: "",
+    visitDate: new Date().toISOString().slice(0, 16),
+    caseType: "مراجعة دورية",
+    diagnosis: "",
+    treatment: ""
+  });
+
+  useEffect(() => {
+    async function loadClinicRecords() {
+      try {
+        setLoading(true);
+        setError("");
+        const payload = await listClinicRecords(accessToken);
+        setRows(payload.data);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "تعذر تحميل سجلات العيادة");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadClinicRecords();
+  }, [accessToken]);
+
+  async function handleEmployeeLookup() {
+    if (!form.employeeCode.trim()) {
+      setLookupError("أدخل كود الموظف أولاً");
+      setEmployeeProfile(null);
+      return;
+    }
+
+    try {
+      setLookupLoading(true);
+      setLookupError("");
+      const payload = await lookupClinicEmployee(accessToken, form.employeeCode.trim());
+      setEmployeeProfile(payload.data);
+      setForm((current) => ({
+        ...current,
+        patientName: payload.data.full_name
+      }));
+    } catch (lookupIssue) {
+      setEmployeeProfile(null);
+      setLookupError(
+        lookupIssue instanceof Error ? lookupIssue.message : "تعذر العثور على الموظف بهذا الكود"
+      );
+    } finally {
+      setLookupLoading(false);
+    }
+  }
+
+  async function handleCreateClinicRecord(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.patientName.trim()) {
+      setError("أدخل اسم الحالة قبل الحفظ");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createClinicRecordEntry(accessToken, {
+        patient_name: form.patientName.trim(),
+        visit_date: form.visitDate || new Date().toISOString(),
+        case_type: form.caseType.trim() || null,
+        diagnosis: form.diagnosis.trim() || null,
+        treatment: form.treatment.trim() || null
+      });
+
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        employeeCode: "",
+        patientName: "",
+        visitDate: new Date().toISOString().slice(0, 16),
+        caseType: "مراجعة دورية",
+        diagnosis: "",
+        treatment: ""
+      });
+      setEmployeeProfile(null);
+      setLookupError("");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ السجل الطبي");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const todayVisits = rows.filter((row) => {
+    const visitDate = new Date(row.visit_date);
+    const now = new Date();
+    return (
+      visitDate.getFullYear() === now.getFullYear() &&
+      visitDate.getMonth() === now.getMonth() &&
+      visitDate.getDate() === now.getDate()
+    );
+  }).length;
+
+  const observationCases = rows.filter((row) =>
+    (row.case_type || "").includes("متابعة") || (row.treatment || "").includes("ملاحظة")
+  ).length;
+  const uniqueCaseTypes = new Set(rows.map((row) => row.case_type || "غير محدد")).size;
+  const recentRows = [...rows].sort(
+    (left, right) => new Date(right.visit_date).getTime() - new Date(left.visit_date).getTime()
+  );
+  const medicationRows = recentRows
+    .filter((row) => row.treatment?.trim())
+    .flatMap((row) =>
+      row.treatment!
+        .split(/[,\n،]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((medication) => ({
+          id: `${row.id}-${medication}`,
+          medication,
+          patientName: row.patient_name,
+          caseType: row.case_type || "حالة عامة",
+          visitDate: row.visit_date
+        }))
+    );
+  const clinicTabs: Array<{ key: ClinicTab; label: string }> = [
+    { key: "visits", label: "الزيارات" },
+    { key: "medications", label: "الأدوية" },
+    { key: "history", label: "السجل الكامل" }
+  ];
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero clinic-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card clinic-summary-shell">
+        <div className="module-tab-row clinic-tab-row">
+          {clinicTabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`module-tab ${activeTab === tab.key ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{rows.length}</strong>
+            <span>إجمالي السجلات الطبية</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{todayVisits}</strong>
+            <span>زيارات اليوم</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{observationCases}</strong>
+            <span>حالات متابعة</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{activeTab === "medications" ? medicationRows.length : uniqueCaseTypes}</strong>
+            <span>{activeTab === "medications" ? "أدوية مسجلة" : "أنواع حالات"}</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card clinic-activity-card">
+          <div className="card-head">
+            <h3>
+              {activeTab === "visits"
+                ? "لوحة الزيارات الطبية"
+                : activeTab === "medications"
+                  ? "تبويب الأدوية"
+                  : "السجل الكامل للعيادة"}
+            </h3>
+            <span>
+              {activeTab === "visits"
+                ? "عرض حي للحالات الأخيرة"
+                : activeTab === "medications"
+                  ? "الأدوية المستخرجة من بيانات العلاج الحالية"
+                  : "جميع السجلات الطبية مرتبة زمنيًا"}
+            </span>
+          </div>
+
+          {activeTab === "medications" ? (
+            <div className="clinic-activity-list">
+              {medicationRows.slice(0, 8).map((item) => (
+                <div className="clinic-activity-item" key={item.id}>
+                  <div className="clinic-avatar">{item.medication.slice(0, 2).toUpperCase()}</div>
+                  <div className="clinic-activity-content">
+                    <strong>{item.medication}</strong>
+                    <span>{item.patientName}</span>
+                    <small>{new Date(item.visitDate).toLocaleString()}</small>
+                  </div>
+                  <div className="clinic-activity-tag">{item.caseType}</div>
+                </div>
+              ))}
+              {!medicationRows.length ? (
+                <div className="empty-state">لا توجد أدوية مسجلة داخل البيانات الحالية.</div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="clinic-activity-list">
+              {recentRows.slice(0, activeTab === "history" ? 10 : 5).map((row) => (
+                <div className="clinic-activity-item" key={row.id}>
+                  <div className="clinic-avatar">{row.patient_name.slice(0, 2).toUpperCase()}</div>
+                  <div className="clinic-activity-content">
+                    <strong>{row.patient_name}</strong>
+                    <span>{row.case_type || "حالة عامة"}</span>
+                    <small>{new Date(row.visit_date).toLocaleString()}</small>
+                  </div>
+                  <div className="clinic-activity-tag">{row.diagnosis || "تقييم أولي"}</div>
+                </div>
+              ))}
+              {!recentRows.length ? <div className="empty-state">لا توجد زيارات مسجلة بعد.</div> : null}
+            </div>
+          )}
+        </article>
+
+        <article className="preview-card risk-form-card clinic-form-card">
+          <div className="card-head">
+            <h3>إضافة زيارة طبية</h3>
+            <span>إدخال كود الموظف سيجلب البيانات الأساسية تلقائيًا</span>
+          </div>
+
+          <form className="risk-form" onSubmit={handleCreateClinicRecord}>
+            <label>
+              كود الموظف
+              <div className="inline-field-group">
+                <input
+                  value={form.employeeCode}
+                  onChange={(event) => {
+                    const nextCode = event.target.value;
+                    setForm((current) => ({ ...current, employeeCode: nextCode }));
+                    if (!nextCode.trim()) {
+                      setEmployeeProfile(null);
+                      setLookupError("");
+                    }
+                  }}
+                  onBlur={() => {
+                    if (form.employeeCode.trim() && !employeeProfile) {
+                      void handleEmployeeLookup();
+                    }
+                  }}
+                  placeholder="EMP-1024"
+                />
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => void handleEmployeeLookup()}
+                  disabled={lookupLoading}
+                >
+                  {lookupLoading ? "جارٍ التحقق..." : "جلب البيانات"}
+                </button>
+              </div>
+            </label>
+
+            {employeeProfile ? (
+              <div className="clinic-employee-card">
+                <div>
+                  <small>الاسم الكامل</small>
+                  <strong>{employeeProfile.full_name}</strong>
+                </div>
+                <div>
+                  <small>رقم الموظف</small>
+                  <strong>{employeeProfile.employee_no || "-"}</strong>
+                </div>
+                <div>
+                  <small>القسم</small>
+                  <strong>{employeeProfile.department || "-"}</strong>
+                </div>
+                <div>
+                  <small>النوع</small>
+                  <strong>{employeeProfile.employer_type}</strong>
+                </div>
+                <div>
+                  <small>حالة الامتثال</small>
+                  <strong>{employeeProfile.compliance_status || "-"}</strong>
+                </div>
+              </div>
+            ) : null}
+
+            {lookupError ? <div className="form-error">{lookupError}</div> : null}
+
+            <label>
+              اسم الحالة
+              <input
+                value={form.patientName}
+                onChange={(event) => setForm((current) => ({ ...current, patientName: event.target.value }))}
+                placeholder="اسم الموظف أو المقاول"
+              />
+            </label>
+            <label>
+              تاريخ الزيارة
+              <input
+                type="datetime-local"
+                value={form.visitDate}
+                onChange={(event) => setForm((current) => ({ ...current, visitDate: event.target.value }))}
+              />
+            </label>
+            <label>
+              نوع الحالة
+              <select
+                value={form.caseType}
+                onChange={(event) => setForm((current) => ({ ...current, caseType: event.target.value }))}
+              >
+                <option value="مراجعة دورية">مراجعة دورية</option>
+                <option value="إجهاد حراري">إجهاد حراري</option>
+                <option value="إصابة بسيطة">إصابة بسيطة</option>
+                <option value="تعرض كيميائي">تعرض كيميائي</option>
+                <option value="متابعة">متابعة</option>
+              </select>
+            </label>
+            <label>
+              التشخيص
+              <input
+                value={form.diagnosis}
+                onChange={(event) => setForm((current) => ({ ...current, diagnosis: event.target.value }))}
+                placeholder="التشخيص أو الملاحظة الطبية"
+              />
+            </label>
+            <label>
+              الإجراء العلاجي / الأدوية
+              <textarea
+                value={form.treatment}
+                onChange={(event) => setForm((current) => ({ ...current, treatment: event.target.value }))}
+                placeholder="اكتب العلاج أو الأدوية أو التوصية الطبية"
+              />
+            </label>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ حفظ الزيارة..." : "حفظ السجل الطبي"}
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section className="preview-card clinic-table-card">
+        <div className="card-head">
+          <h3>{activeTab === "medications" ? "تبويب الأدوية" : "سجل العيادة الطبية"}</h3>
+          <span>{activeTab === "medications" ? `${medicationRows.length} عنصر دوائي` : `${rows.length} زيارة`}</span>
+        </div>
+
+        {error ? <div className="form-error">{error}</div> : null}
+        {loading ? <div className="empty-state">جارٍ تحميل سجلات العيادة...</div> : null}
+
+        {!loading ? (
+          <div className="risk-table">
+            {activeTab === "medications" ? (
+              <>
+                <div className="risk-table-head clinic-medication-head">
+                  <span>الدواء</span>
+                  <span>الحالة</span>
+                  <span>نوع الحالة</span>
+                  <span>تاريخ الزيارة</span>
+                </div>
+                {medicationRows.map((row) => (
+                  <div className="risk-row clinic-medication-row" key={row.id}>
+                    <strong>{row.medication}</strong>
+                    <span>{row.patientName}</span>
+                    <span>{row.caseType}</span>
+                    <span>{new Date(row.visitDate).toLocaleString()}</span>
+                  </div>
+                ))}
+                {!medicationRows.length ? (
+                  <div className="empty-state">لا توجد أدوية مسجلة داخل البيانات الحالية.</div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <div className="risk-table-head clinic-table-head">
+                  <span>الحالة</span>
+                  <span>نوع الحالة</span>
+                  <span>التشخيص</span>
+                  <span>العلاج</span>
+                  <span>تاريخ الزيارة</span>
+                </div>
+                {recentRows.map((row) => (
+                  <div className="risk-row clinic-row" key={row.id}>
+                    <strong>{row.patient_name}</strong>
+                    <span>{row.case_type || "-"}</span>
+                    <span>{row.diagnosis || "-"}</span>
+                    <span>{row.treatment || "-"}</span>
+                    <span>{new Date(row.visit_date).toLocaleString()}</span>
+                  </div>
+                ))}
+                {!recentRows.length ? <div className="empty-state">لا توجد سجلات عيادة بعد.</div> : null}
+              </>
+            )}
           </div>
         ) : null}
       </section>
@@ -2328,7 +2758,7 @@ function ModulePage({
   }
 
   if (moduleRoute.key === "clinic") {
-    return <ClinicModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+    return <ClinicModuleWorkspace accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   if (moduleRoute.key === "users") {

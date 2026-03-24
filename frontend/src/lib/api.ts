@@ -107,6 +107,15 @@ export type ClinicRecordRow = {
   updated_at: string;
 };
 
+export type ClinicEmployeeLookup = {
+  id: string;
+  employee_no: string | null;
+  full_name: string;
+  employer_type: string;
+  department: string | null;
+  compliance_status: string | null;
+};
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
@@ -281,6 +290,13 @@ export async function createClinicRecordEntry(
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export async function lookupClinicEmployee(token: string, employeeCode: string) {
+  return apiFetch<{ moduleKey: "clinic"; data: ClinicEmployeeLookup }>(
+    `/modules/clinic/employee/${encodeURIComponent(employeeCode)}`,
+    token
+  );
 }
 
 export async function listWorkforceModule(token: string, moduleKey: "employees" | "contractors") {

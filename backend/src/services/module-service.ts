@@ -86,3 +86,17 @@ export async function updateModuleRow(
   if (error) throw error;
   return data;
 }
+
+export async function findEmployeeByCode(employeeCode: string) {
+  const { data, error } = await supabaseAdmin
+    .from("employees_contractors")
+    .select("id, employee_no, full_name, employer_type, department, compliance_status")
+    .ilike("employee_no", employeeCode.trim())
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}

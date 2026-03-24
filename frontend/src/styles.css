@@ -1057,6 +1057,29 @@ h2 {
   border: 1px solid rgba(20, 184, 166, 0.12);
 }
 
+.clinic-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.module-tab {
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  background: #ffffff;
+  color: #275249;
+  border-radius: 999px;
+  padding: 11px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.module-tab.active {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #ffffff;
+  border-color: transparent;
+}
+
 .clinic-summary-card {
   background: linear-gradient(180deg, #f9fffd, #f3fbf8);
 }
@@ -1065,6 +1088,48 @@ h2 {
 .clinic-form-card,
 .clinic-table-card {
   border-color: rgba(20, 184, 166, 0.12);
+}
+
+.inline-field-group {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.secondary-button {
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  background: rgba(20, 184, 166, 0.08);
+  color: #0f4f4a;
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.secondary-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.clinic-employee-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f7fefd, #eefaf7);
+  border: 1px solid rgba(20, 184, 166, 0.14);
+}
+
+.clinic-employee-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.clinic-employee-card small {
+  color: #6a857e;
+  font-weight: 700;
 }
 
 .clinic-activity-list {
@@ -1116,6 +1181,11 @@ h2 {
 .clinic-table-head,
 .clinic-row {
   grid-template-columns: 1.2fr 1fr 1.2fr 1.2fr 1.1fr;
+}
+
+.clinic-medication-head,
+.clinic-medication-row {
+  grid-template-columns: 1.2fr 1.1fr 1fr 1.1fr;
 }
 
 .permit-detail-grid {

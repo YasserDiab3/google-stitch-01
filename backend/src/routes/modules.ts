@@ -4,6 +4,7 @@ import { moduleCatalog, modules, roleCanAccessModule, type ModuleKey } from "../
 import { requireAuth, type AuthenticatedRequest } from "../middleware/auth.js";
 import {
   createModuleRow,
+  findEmployeeByCode,
   getModuleRow,
   listModuleRows,
   updateModuleRow
@@ -39,21 +40,16 @@ modulesRouter.get("/", (request, response) => {
   });
 });
 
-modulesRouter.get("/:moduleKey", async (request, response, next) => {
+modulesRouter.get("/clinic/employee/:employeeCode", async (request, response, next) => {
   try {
     const authRequest = request as unknown as AuthenticatedRequest;
-    const moduleKey = moduleParamSchema.parse(request.params.moduleKey);
-    if (!roleCanAccessModule(authRequest.authUser.role, moduleKey)) {
+    if (!roleCanAccessModule(authRequest.authUser.role, "clinic")) {
       response.status(403).json({ error: "Access denied for this module" });
       return;
     }
-    const data =
-      moduleKey === "permitsToWork"
-        ? await listPermitsToWorkRows()
-        : moduleKey === "users"
-          ? await listManagedUsers()
-          : await listModuleRows(moduleKey);
-    response.json({ moduleKey, data });
+
+    const data = await findEmployeeByCode(request.params.employeeCode);
+    response.json({ moduleKey: "clinic", data });
   } catch (error) {
     next(error);
   }
@@ -69,6 +65,26 @@ modulesRouter.get("/permitsToWork/meta/options", async (request, response, next)
 
     const data = await getPermitWorkflowMetadata();
     response.json({ moduleKey: "permitsToWork", data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+modulesRouter.get("/:moduleKey", async (request, response, next) => {
+  try {
+    const authRequest = request as unknown as AuthenticatedRequest;
+    const moduleKey = moduleParamSchema.parse(request.params.moduleKey);
+    if (!roleCanAccessModule(authRequest.authUser.role, moduleKey)) {
+      response.status(403).json({ error: "Access denied for this module" });
+      return;
+    }
+    const data =
+      moduleKey === "permitsToWork"
+        ? await listPermitsToWorkRows()
+        : moduleKey === "users"
+          ? await listManagedUsers()
+          : await listModuleRows(moduleKey);
+    response.json({ moduleKey, data });
   } catch (error) {
     next(error);
   }
