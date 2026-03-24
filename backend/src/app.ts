@@ -1,7 +1,7 @@
 import compression from "compression";
 import cors from "cors";
-import express from "express";
-import helmet from "helmet";
+import express, { type RequestHandler } from "express";
+import helmetImport from "helmet";
 import pino from "pino";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -15,6 +15,10 @@ const logger = pino({
   level: env.NODE_ENV === "production" ? "info" : "debug"
 });
 
+const helmetFactory = helmetImport as unknown as (() => RequestHandler) | { default: () => RequestHandler };
+const helmetMiddleware =
+  typeof helmetFactory === "function" ? helmetFactory() : helmetFactory.default();
+
 const app = express();
 
 app.use((request, _response, next) => {
@@ -27,7 +31,7 @@ app.use((request, _response, next) => {
   );
   next();
 });
-app.use(helmet());
+app.use(helmetMiddleware);
 app.use(compression());
 app.use(
   cors({
