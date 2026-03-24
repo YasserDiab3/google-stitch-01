@@ -422,6 +422,52 @@ h2 {
   font-size: 1.1rem;
 }
 
+.login-access-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(243, 246, 252, 0.92), rgba(248, 250, 255, 0.96));
+  border: 1px solid rgba(21, 96, 182, 0.12);
+}
+
+.login-access-card > strong {
+  color: #11315a;
+  font-size: 1rem;
+}
+
+.access-list {
+  display: grid;
+  gap: 10px;
+}
+
+.access-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(17, 49, 90, 0.08);
+}
+
+.access-item span,
+.access-copy,
+.access-hint {
+  color: #5b6475;
+}
+
+.access-item bdi {
+  color: #111827;
+  font-weight: 800;
+}
+
+.access-copy,
+.access-hint {
+  margin: 0;
+  line-height: 1.8;
+}
+
 .login-divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

@@ -45,6 +45,12 @@ const loginCopy = {
     with: "أو سجل الدخول بشكل آمن عبر",
     touchId: "Touch ID",
     faceId: "Face ID",
+    accessTitle: "بيانات الدخول",
+    accessNone: "لا توجد بيانات دخول افتراضية مدمجة داخل المشروع.",
+    accessHint: "استخدم حساب Supabase الذي أنشأته من لوحة Authentication أو عرّف بيانات العرض داخل متغيرات البيئة.",
+    accessEmail: "اسم المستخدم",
+    accessPassword: "كلمة المرور",
+    accessPasswordFallback: "غير محددة داخل المشروع",
     notes: "ملاحظات الوصول الآمن",
     note1: "تسجيل الدخول الفعلي يتم عبر signInWithPassword.",
     note2: "الخلفية تحمل أو تنشئ profile تلقائياً بعد نجاح الدخول.",
@@ -89,6 +95,12 @@ const loginCopy = {
     with: "OR SECURE LOGIN WITH",
     touchId: "Touch ID",
     faceId: "Face ID",
+    accessTitle: "Access Credentials",
+    accessNone: "There are no built-in default credentials in this project.",
+    accessHint: "Use a Supabase account you created in Authentication, or define display credentials through environment variables.",
+    accessEmail: "Username",
+    accessPassword: "Password",
+    accessPasswordFallback: "Not defined in the project",
     notes: "SECURE ACCESS NOTES",
     note1: "Real sign-in uses signInWithPassword.",
     note2: "The backend loads or creates the user profile after login.",
@@ -115,6 +127,9 @@ const loginCopy = {
     support: "SUPPORT"
   }
 } as const;
+
+const defaultLoginEmail = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL;
+const defaultLoginPasswordHint = import.meta.env.VITE_DEFAULT_LOGIN_PASSWORD_HINT;
 
 function getRoleSummary(role: UserRole) {
   switch (role) {
@@ -178,7 +193,7 @@ function LoginPage({
     event.preventDefault();
 
     if (!supabase) {
-      setState((current) => ({ ...current, error: copy.warning }));
+      setState((current) => ({ ...current, error: "" }));
       return;
     }
 
@@ -307,6 +322,25 @@ function LoginPage({
               </button>
             </form>
 
+            <div className="login-access-card">
+              <strong>{copy.accessTitle}</strong>
+              {defaultLoginEmail || defaultLoginPasswordHint ? (
+                <div className="access-list">
+                  <div className="access-item">
+                    <span>{copy.accessEmail}</span>
+                    <bdi>{defaultLoginEmail || copy.accessNone}</bdi>
+                  </div>
+                  <div className="access-item">
+                    <span>{copy.accessPassword}</span>
+                    <bdi>{defaultLoginPasswordHint || copy.accessPasswordFallback}</bdi>
+                  </div>
+                </div>
+              ) : (
+                <p className="access-copy">{copy.accessNone}</p>
+              )}
+              <p className="access-hint">{copy.accessHint}</p>
+            </div>
+
             <div className="login-divider">
               <span>{copy.with}</span>
             </div>
@@ -433,7 +467,7 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
     setMessage("");
 
     if (!supabase) {
-      setError(copy.warning);
+      setError("");
       return;
     }
 
@@ -468,7 +502,7 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
     setMessage("");
 
     if (!supabase) {
-      setError(copy.warning);
+      setError("");
       return;
     }
 
