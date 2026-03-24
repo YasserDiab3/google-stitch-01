@@ -3,12 +3,16 @@ import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   createRiskRegistryEntry,
+  createPermitToWorkEntry,
   fetchAllowedModules,
   fetchAllowedScreens,
   fetchCurrentUser,
   listRiskRegistry,
+  listPermitsToWork,
+  updatePermitToWorkEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type PermitToWorkRow,
   type RiskRegistryRow
 } from "./lib/api";
 import { supabase } from "./lib/supabase";
@@ -43,6 +47,16 @@ type RiskFormState = {
   severity: number;
   likelihood: number;
   dueDate: string;
+};
+
+type PermitTab = "all" | "draft" | "active" | "closed";
+
+type PermitFormState = {
+  permitNo: string;
+  workType: string;
+  area: string;
+  validFrom: string;
+  validTo: string;
 };
 
 const loginCopy = {
@@ -1070,6 +1084,291 @@ function RiskRegistryModulePage({
   );
 }
 
+function PermitsToWorkModulePage({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [activeTab, setActiveTab] = useState<PermitTab>("all");
+  const [rows, setRows] = useState<PermitToWorkRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<PermitFormState>({
+    permitNo: "",
+    workType: "Hot Work",
+    area: "",
+    validFrom: "",
+    validTo: ""
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPermits() {
+      try {
+        setLoading(true);
+        setError("");
+        const payload = await listPermitsToWork(accessToken);
+        if (!active) {
+          return;
+        }
+        setRows(payload.data);
+      } catch (loadError) {
+        if (!active) {
+          return;
+        }
+        setError(loadError instanceof Error ? loadError.message : "تعذر تحميل تصاريح العمل");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadPermits();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  const filteredRows = rows.filter((row) => {
+    if (activeTab === "draft") {
+      return row.status === "draft";
+    }
+    if (activeTab === "active") {
+      return row.status === "active";
+    }
+    if (activeTab === "closed") {
+      return row.status === "closed";
+    }
+    return true;
+  });
+
+  const activeCount = rows.filter((row) => row.status === "active").length;
+  const draftCount = rows.filter((row) => row.status === "draft").length;
+  const closedCount = rows.filter((row) => row.status === "closed").length;
+
+  async function handleCreatePermit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.permitNo.trim() || !form.workType.trim()) {
+      setError("أدخل رقم التصريح ونوع العمل");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createPermitToWorkEntry(accessToken, {
+        permit_no: form.permitNo.trim(),
+        work_type: form.workType.trim(),
+        area: form.area.trim() || null,
+        requested_by: user.id,
+        status: "draft",
+        valid_from: form.validFrom || null,
+        valid_to: form.validTo || null
+      });
+
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        permitNo: "",
+        workType: "Hot Work",
+        area: "",
+        validFrom: "",
+        validTo: ""
+      });
+      setActiveTab("all");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء تصريح العمل");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePermitStatus(row: PermitToWorkRow, status: string) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await updatePermitToWorkEntry(accessToken, row.id, {
+        status,
+        approved_by: status === "active" ? user.id : row.approved_by
+      });
+
+      setRows((current) => current.map((item) => (item.id === row.id ? payload.data : item)));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "تعذر تحديث التصريح");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card">
+        <div className="risk-tabs">
+          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>
+            كل التصاريح
+          </button>
+          <button className={activeTab === "draft" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("draft")}>
+            مسودة
+          </button>
+          <button className={activeTab === "active" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("active")}>
+            نشطة
+          </button>
+          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>
+            مغلقة
+          </button>
+        </div>
+
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card">
+            <strong>{rows.length}</strong>
+            <span>إجمالي التصاريح</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{activeCount}</strong>
+            <span>نشطة</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{draftCount}</strong>
+            <span>مسودة</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{closedCount}</strong>
+            <span>مغلقة</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card risk-form-card">
+          <div className="card-head">
+            <h3>إصدار تصريح جديد</h3>
+          </div>
+
+          <form className="risk-form" onSubmit={handleCreatePermit}>
+            <label>
+              رقم التصريح
+              <input
+                value={form.permitNo}
+                onChange={(event) => setForm((current) => ({ ...current, permitNo: event.target.value }))}
+                placeholder="PTW-2026-001"
+              />
+            </label>
+            <label>
+              نوع العمل
+              <input
+                value={form.workType}
+                onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))}
+                placeholder="Hot Work"
+              />
+            </label>
+            <label>
+              المنطقة
+              <input
+                value={form.area}
+                onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))}
+                placeholder="Zone A"
+              />
+            </label>
+            <div className="risk-form-grid">
+              <label>
+                صالح من
+                <input
+                  type="datetime-local"
+                  value={form.validFrom}
+                  onChange={(event) => setForm((current) => ({ ...current, validFrom: event.target.value }))}
+                />
+              </label>
+              <label>
+                صالح إلى
+                <input
+                  type="datetime-local"
+                  value={form.validTo}
+                  onChange={(event) => setForm((current) => ({ ...current, validTo: event.target.value }))}
+                />
+              </label>
+            </div>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ الإصدار..." : "إضافة التصريح"}
+            </button>
+          </form>
+        </article>
+
+        <article className="preview-card risk-table-card">
+          <div className="card-head">
+            <h3>تصاريح العمل</h3>
+            <span>{activeTab === "all" ? "عرض شامل" : "عرض مفلتر"}</span>
+          </div>
+
+          {error ? <div className="form-error">{error}</div> : null}
+          {loading ? <div className="empty-state">جارٍ تحميل التصاريح...</div> : null}
+
+          {!loading ? (
+            <div className="risk-table">
+              <div className="risk-table-head permit-table-head">
+                <span>رقم التصريح</span>
+                <span>نوع العمل</span>
+                <span>المنطقة</span>
+                <span>الحالة</span>
+                <span>الصلاحية</span>
+                <span>إجراء</span>
+              </div>
+              {filteredRows.map((row) => (
+                <div className="risk-row permit-row" key={row.id}>
+                  <strong>{row.permit_no}</strong>
+                  <span>{row.work_type}</span>
+                  <span>{row.area || "-"}</span>
+                  <span className={`risk-status risk-status-${row.status}`}>{row.status}</span>
+                  <span>{row.valid_to ? new Date(row.valid_to).toLocaleString() : "-"}</span>
+                  <div className="risk-actions">
+                    {row.status === "draft" ? (
+                      <button type="button" onClick={() => void handlePermitStatus(row, "active")}>
+                        اعتماد
+                      </button>
+                    ) : null}
+                    {row.status !== "closed" ? (
+                      <button type="button" onClick={() => void handlePermitStatus(row, "closed")}>
+                        إغلاق
+                      </button>
+                    ) : null}
+                    {row.status === "closed" ? (
+                      <button type="button" onClick={() => void handlePermitStatus(row, "active")}>
+                        إعادة تفعيل
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+              {!filteredRows.length ? <div className="empty-state">لا توجد تصاريح مطابقة لهذا التبويب.</div> : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+    </div>
+  );
+}
+
 function ModulePage({
   user,
   moduleRoutes,
@@ -1098,6 +1397,10 @@ function ModulePage({
 
   if (moduleRoute.key === "riskRegistry") {
     return <RiskRegistryModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+  }
+
+  if (moduleRoute.key === "permitsToWork") {
+    return <PermitsToWorkModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   return (

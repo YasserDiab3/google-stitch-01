@@ -27,6 +27,20 @@ export type RiskRegistryRow = {
   updated_at: string;
 };
 
+export type PermitToWorkRow = {
+  id: string;
+  permit_no: string;
+  work_type: string;
+  area: string | null;
+  requested_by: string | null;
+  approved_by: string | null;
+  status: string;
+  valid_from: string | null;
+  valid_to: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
@@ -158,6 +172,39 @@ export async function updateRiskRegistryEntry(
 ) {
   return apiFetch<{ moduleKey: "riskRegistry"; data: RiskRegistryRow }>(
     `/modules/riskRegistry/${id}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+export async function listPermitsToWork(token: string) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow[] }>("/modules/permitsToWork", token);
+}
+
+export async function createPermitToWorkEntry(
+  token: string,
+  payload: Partial<PermitToWorkRow> & Pick<PermitToWorkRow, "permit_no" | "work_type">
+) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
+    "/modules/permitsToWork",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+export async function updatePermitToWorkEntry(
+  token: string,
+  id: string,
+  payload: Partial<PermitToWorkRow>
+) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
+    `/modules/permitsToWork/${id}`,
     token,
     {
       method: "PATCH",
