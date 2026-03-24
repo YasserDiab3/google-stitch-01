@@ -1120,19 +1120,19 @@ function PermitsToWorkModulePage({
   });
 
   const workflowLabels: Record<string, string> = {
-    submitted: "?????",
-    in_review: "??? ????????",
-    approved: "?????",
-    rejected: "?????",
-    closed: "????",
-    area_manager: "????? ???????",
-    quality: "??????",
-    safety: "???????",
-    permit_approver: "????? ???????",
-    completed: "?????",
-    pending: "???????",
-    requester: "???? ???????",
-    permit_requester: "???? ???????"
+    submitted: "مُرسل",
+    in_review: "قيد الاعتماد",
+    approved: "معتمد",
+    rejected: "مرفوض",
+    closed: "مغلق",
+    area_manager: "مديرة المنطقة",
+    quality: "الجودة",
+    safety: "السلامة",
+    permit_approver: "معتمد التصريح",
+    completed: "مكتمل",
+    pending: "بانتظار",
+    requester: "طالب التصريح",
+    permit_requester: "طالب التصريح"
   };
 
   const actorStepByRole: Partial<Record<UserRole, string>> = {
@@ -1162,7 +1162,7 @@ function PermitsToWorkModulePage({
         setSelectedPermitId(payload.data[0].id);
       }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "???? ????? ?????? ?????");
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل تصاريح العمل");
     } finally {
       setLoading(false);
     }
@@ -1174,7 +1174,7 @@ function PermitsToWorkModulePage({
       const payload = await listPermitNotifications(accessToken, permitId);
       setNotifications(payload.data);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "???? ????? ?????????");
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل الإشعارات");
     } finally {
       setNotificationsLoading(false);
     }
@@ -1231,7 +1231,7 @@ function PermitsToWorkModulePage({
     event.preventDefault();
 
     if (!form.permitNo.trim() || !form.workType.trim() || !form.area.trim()) {
-      setError("???? ??? ??????? ???? ????? ????????");
+      setError("أدخل رقم التصريح ونوع العمل والمنطقة");
       return;
     }
 
@@ -1263,7 +1263,7 @@ function PermitsToWorkModulePage({
       setActiveTab("pending");
       await loadNotifications(payload.data.id);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "???? ????? ????? ?????");
+      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء تصريح العمل");
     } finally {
       setSaving(false);
     }
@@ -1278,7 +1278,7 @@ function PermitsToWorkModulePage({
       setSelectedPermitId(row.id);
       await loadNotifications(row.id);
     } catch (openError) {
-      setError(openError instanceof Error ? openError.message : "???? ??? ???????");
+      setError(openError instanceof Error ? openError.message : "تعذر فتح التصريح");
     } finally {
       setSaving(false);
     }
@@ -1294,7 +1294,7 @@ function PermitsToWorkModulePage({
       setComment("");
       await loadNotifications(row.id);
     } catch (decisionError) {
-      setError(decisionError instanceof Error ? decisionError.message : "???? ????? ???? ????????");
+      setError(decisionError instanceof Error ? decisionError.message : "تعذر تحديث دورة الاعتماد");
     } finally {
       setSaving(false);
     }
@@ -1309,7 +1309,7 @@ function PermitsToWorkModulePage({
       setSelectedPermitId(row.id);
       await loadNotifications(row.id);
     } catch (closeError) {
-      setError(closeError instanceof Error ? closeError.message : "???? ????? ???????");
+      setError(closeError instanceof Error ? closeError.message : "تعذر إغلاق التصريح");
     } finally {
       setSaving(false);
     }
@@ -1329,7 +1329,7 @@ function PermitsToWorkModulePage({
       await loadPermits();
       await loadNotifications(row.id);
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : "???? ????? ???????");
+      setError(exportError instanceof Error ? exportError.message : "تعذر تصدير التصريح");
     } finally {
       setSaving(false);
     }
@@ -1352,18 +1352,18 @@ function PermitsToWorkModulePage({
 
       <section className="risk-toolbar-card">
         <div className="risk-tabs">
-          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>?? ????????</button>
-          <button className={activeTab === "pending" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("pending")}>??????? ????????</button>
-          <button className={activeTab === "approved" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("approved")}>????????</button>
-          <button className={activeTab === "rejected" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("rejected")}>????????</button>
-          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>???????</button>
+          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>كل التصاريح</button>
+          <button className={activeTab === "pending" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("pending")}>بانتظار الاعتماد</button>
+          <button className={activeTab === "approved" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("approved")}>المعتمدة</button>
+          <button className={activeTab === "rejected" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("rejected")}>المرفوضة</button>
+          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>المغلقة</button>
         </div>
 
         <div className="risk-summary-grid">
-          <article className="risk-summary-card"><strong>{rows.length}</strong><span>?????? ????????</span></article>
-          <article className="risk-summary-card"><strong>{pendingCount}</strong><span>?? ????? ????????</span></article>
-          <article className="risk-summary-card"><strong>{approvedCount}</strong><span>?????? ??????</span></article>
-          <article className="risk-summary-card"><strong>{rejectedCount + closedCount}</strong><span>?????? ?? ?????</span></article>
+          <article className="risk-summary-card"><strong>{rows.length}</strong><span>إجمالي التصاريح</span></article>
+          <article className="risk-summary-card"><strong>{pendingCount}</strong><span>في دائرة الاعتماد</span></article>
+          <article className="risk-summary-card"><strong>{approvedCount}</strong><span>معتمدة وجاهزة</span></article>
+          <article className="risk-summary-card"><strong>{rejectedCount + closedCount}</strong><span>مرفوضة أو مغلقة</span></article>
         </div>
       </section>
 
@@ -1373,79 +1373,79 @@ function PermitsToWorkModulePage({
         {canCreatePermit ? (
           <article className="preview-card risk-form-card">
             <div className="card-head">
-              <h3>????? ????? ????</h3>
-              <span>???? ??????? ???? ?????? ?? ????? ???????? ??? ??????????.</span>
+              <h3>إصدار تصريح جديد</h3>
+              <span>طالب التصريح يبدأ الدورة ثم تتحرك تلقائياً بين الاعتمادات.</span>
             </div>
 
             <form className="risk-form" onSubmit={handleCreatePermit}>
               <label>
-                ??? ???????
+                رقم التصريح
                 <input value={form.permitNo} onChange={(event) => setForm((current) => ({ ...current, permitNo: event.target.value }))} placeholder="PTW-2026-001" />
               </label>
               <label>
-                ??? ?????
+                نوع العمل
                 <input value={form.workType} onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))} placeholder="Hot Work" />
               </label>
               <label>
-                ???????
+                المنطقة
                 <input value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} placeholder="Zone A" />
               </label>
               <label>
-                ???????
+                المقاول
                 <input value={form.contractorName} onChange={(event) => setForm((current) => ({ ...current, contractorName: event.target.value }))} placeholder="Main Contractor" />
               </label>
               <label>
-                ??? ?????
-                <input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="??? ????? ????? ?????" />
+                وصف العمل
+                <input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="وصف مختصر لنطاق العمل" />
               </label>
               <div className="risk-form-grid">
                 <label>
-                  ???? ??
+                  صالح من
                   <input type="datetime-local" value={form.validFrom} onChange={(event) => setForm((current) => ({ ...current, validFrom: event.target.value }))} />
                 </label>
                 <label>
-                  ???? ???
+                  صالح إلى
                   <input type="datetime-local" value={form.validTo} onChange={(event) => setForm((current) => ({ ...current, validTo: event.target.value }))} />
                 </label>
               </div>
 
               <button className="button" type="submit" disabled={saving}>
-                {saving ? "???? ????? ???????..." : "????? ???????"}
+                {saving ? "جارٍ إصدار التصريح..." : "إضافة التصريح"}
               </button>
             </form>
           </article>
         ) : (
           <article className="preview-card risk-form-card">
             <div className="card-head">
-              <h3>????? ????????</h3>
+              <h3>دائرة الاعتماد</h3>
             </div>
             <div className="permit-workflow-list">
-              <div className="permit-workflow-step active">1. ???? ???????</div>
-              <div className="permit-workflow-step">2. ????? ???????</div>
-              <div className="permit-workflow-step">3. ??????</div>
-              <div className="permit-workflow-step">4. ???????</div>
-              <div className="permit-workflow-step">5. ????? ???????</div>
+              <div className="permit-workflow-step active">1. طالب التصريح</div>
+              <div className="permit-workflow-step">2. مديرة المنطقة</div>
+              <div className="permit-workflow-step">3. الجودة</div>
+              <div className="permit-workflow-step">4. السلامة</div>
+              <div className="permit-workflow-step">5. معتمد التصريح</div>
             </div>
           </article>
         )}
 
         <article className="preview-card risk-table-card">
           <div className="card-head">
-            <h3>??? ????????</h3>
-            <span>{activeTab === "all" ? "??? ????" : "??? ??? ??????"}</span>
+            <h3>سجل التصاريح</h3>
+            <span>{activeTab === "all" ? "عرض شامل" : "عرض حسب الحالة"}</span>
           </div>
 
-          {loading ? <div className="empty-state">???? ????? ?????? ?????...</div> : null}
+          {loading ? <div className="empty-state">جارٍ تحميل تصاريح العمل...</div> : null}
 
           {!loading ? (
             <div className="risk-table">
               <div className="risk-table-head permit-table-head">
-                <span>??? ???????</span>
-                <span>??? ?????</span>
-                <span>???????</span>
-                <span>??????</span>
-                <span>????? ??????</span>
-                <span>?????</span>
+                <span>رقم التصريح</span>
+                <span>نوع العمل</span>
+                <span>المنطقة</span>
+                <span>الحالة</span>
+                <span>الدور الحالي</span>
+                <span>إجراء</span>
               </div>
               {filteredRows.map((row) => (
                 <div className={`risk-row permit-row ${selectedPermitId === row.id ? "selected" : ""}`} key={row.id}>
@@ -1455,15 +1455,15 @@ function PermitsToWorkModulePage({
                   <span className={`risk-status risk-status-${row.status}`}>{workflowLabels[row.status] || row.status}</span>
                   <span>{workflowLabels[row.current_step] || row.current_step}</span>
                   <div className="risk-actions">
-                    <button type="button" onClick={() => void handleOpenPermit(row)}>???</button>
-                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "approve")}>??????</button> : null}
-                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "reject")}>???</button> : null}
-                    {canClose(row) && row.status !== "closed" ? <button type="button" onClick={() => void handleClosePermit(row)}>?????</button> : null}
-                    {canExport(row) ? <button type="button" onClick={() => void handleExportPermit(row)}>?????</button> : null}
+                    <button type="button" onClick={() => void handleOpenPermit(row)}>فتح</button>
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "approve")}>اعتماد</button> : null}
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "reject")}>رفض</button> : null}
+                    {canClose(row) && row.status !== "closed" ? <button type="button" onClick={() => void handleClosePermit(row)}>إغلاق</button> : null}
+                    {canExport(row) ? <button type="button" onClick={() => void handleExportPermit(row)}>تصدير</button> : null}
                   </div>
                 </div>
               ))}
-              {!filteredRows.length ? <div className="empty-state">?? ???? ?????? ?????? ???? ???????.</div> : null}
+              {!filteredRows.length ? <div className="empty-state">لا توجد تصاريح مطابقة لهذا التبويب.</div> : null}
             </div>
           ) : null}
         </article>
@@ -1472,51 +1472,51 @@ function PermitsToWorkModulePage({
       <section className="permit-detail-grid">
         <article className="preview-card permit-detail-card">
           <div className="card-head">
-            <h3>?????? ???????</h3>
-            <span>{selectedPermit ? selectedPermit.permit_no : "???? ??????? ?? ?????"}</span>
+            <h3>تفاصيل التصريح</h3>
+            <span>{selectedPermit ? selectedPermit.permit_no : "اختر تصريحاً من السجل"}</span>
           </div>
 
           {selectedPermit ? (
             <div className="permit-detail-stack">
               <div className="permit-detail-meta">
-                <div><strong>??? ?????:</strong> <span>{selectedPermit.work_type}</span></div>
-                <div><strong>???????:</strong> <span>{selectedPermit.area || "-"}</span></div>
-                <div><strong>???????:</strong> <span>{selectedPermit.contractor_name || "-"}</span></div>
-                <div><strong>?????:</strong> <span>{selectedPermit.description || "-"}</span></div>
-                <div><strong>??????:</strong> <span>{workflowLabels[selectedPermit.status] || selectedPermit.status}</span></div>
-                <div><strong>??? ????:</strong> <span>{workflowLabels[selectedPermit.current_step] || selectedPermit.current_step}</span></div>
-                <div><strong>???? ???:</strong> <span>{selectedPermit.valid_to ? new Date(selectedPermit.valid_to).toLocaleString() : "-"}</span></div>
-                <div><strong>?? ???????:</strong> <span>{selectedPermit.exported_at ? new Date(selectedPermit.exported_at).toLocaleString() : "??"}</span></div>
+                <div><strong>نوع العمل:</strong> <span>{selectedPermit.work_type}</span></div>
+                <div><strong>المنطقة:</strong> <span>{selectedPermit.area || "-"}</span></div>
+                <div><strong>المقاول:</strong> <span>{selectedPermit.contractor_name || "-"}</span></div>
+                <div><strong>الوصف:</strong> <span>{selectedPermit.description || "-"}</span></div>
+                <div><strong>الحالة:</strong> <span>{workflowLabels[selectedPermit.status] || selectedPermit.status}</span></div>
+                <div><strong>آخر خطوة:</strong> <span>{workflowLabels[selectedPermit.current_step] || selectedPermit.current_step}</span></div>
+                <div><strong>صالح إلى:</strong> <span>{selectedPermit.valid_to ? new Date(selectedPermit.valid_to).toLocaleString() : "-"}</span></div>
+                <div><strong>تم التصدير:</strong> <span>{selectedPermit.exported_at ? new Date(selectedPermit.exported_at).toLocaleString() : "لا"}</span></div>
               </div>
 
               <div className="permit-workflow-list">
-                <div className={`permit-workflow-step ${selectedPermit.area_manager_status}`}>????? ???????: {workflowLabels[selectedPermit.area_manager_status] || selectedPermit.area_manager_status}</div>
-                <div className={`permit-workflow-step ${selectedPermit.quality_status}`}>??????: {workflowLabels[selectedPermit.quality_status] || selectedPermit.quality_status}</div>
-                <div className={`permit-workflow-step ${selectedPermit.safety_status}`}>???????: {workflowLabels[selectedPermit.safety_status] || selectedPermit.safety_status}</div>
-                <div className={`permit-workflow-step ${selectedPermit.permit_approver_status}`}>????? ???????: {workflowLabels[selectedPermit.permit_approver_status] || selectedPermit.permit_approver_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.area_manager_status}`}>مديرة المنطقة: {workflowLabels[selectedPermit.area_manager_status] || selectedPermit.area_manager_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.quality_status}`}>الجودة: {workflowLabels[selectedPermit.quality_status] || selectedPermit.quality_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.safety_status}`}>السلامة: {workflowLabels[selectedPermit.safety_status] || selectedPermit.safety_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.permit_approver_status}`}>معتمد التصريح: {workflowLabels[selectedPermit.permit_approver_status] || selectedPermit.permit_approver_status}</div>
               </div>
 
               {canApprove(selectedPermit) ? (
                 <label className="permit-comment">
-                  ??? ????? ?? ?????? ????????
-                  <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="???? ?????? ?????? ???? ?? ??? ????????? ??? ??????" />
+                  سبب الرفض أو ملاحظة الاعتماد
+                  <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="أدخل ملاحظة مختصرة تظهر في سجل الإشعارات عند الحاجة" />
                 </label>
               ) : null}
 
               {selectedPermit.rejection_reason ? <div className="form-error permit-inline-note">{selectedPermit.rejection_reason}</div> : null}
             </div>
           ) : (
-            <div className="empty-state">???? ??????? ?? ?????? ???? ?????????? ??????????.</div>
+            <div className="empty-state">افتح تصريحاً من الجدول لعرض الاعتمادات والإشعارات.</div>
           )}
         </article>
 
         <article className="preview-card permit-detail-card">
           <div className="card-head">
-            <h3>????????? ????????</h3>
-            <span>{notifications.length} ???</span>
+            <h3>الإشعارات المرتبطة</h3>
+            <span>{notifications.length} سجل</span>
           </div>
 
-          {notificationsLoading ? <div className="empty-state">???? ????? ?????????...</div> : null}
+          {notificationsLoading ? <div className="empty-state">جارٍ تحميل الإشعارات...</div> : null}
 
           {!notificationsLoading ? (
             <div className="permit-notification-list">
@@ -1527,7 +1527,7 @@ function PermitsToWorkModulePage({
                   <small>{new Date(notification.created_at).toLocaleString()}</small>
                 </div>
               ))}
-              {!notifications.length ? <div className="empty-state">?? ???? ??????? ???? ??????? ???.</div> : null}
+              {!notifications.length ? <div className="empty-state">لا توجد إشعارات لهذا التصريح بعد.</div> : null}
             </div>
           ) : null}
         </article>
