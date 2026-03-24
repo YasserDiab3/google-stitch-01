@@ -1238,6 +1238,15 @@ h2 {
   background: rgba(220, 38, 38, 0.08);
 }
 
+.permit-create-card {
+  display: grid;
+  gap: 18px;
+}
+
+.permit-launch-button {
+  width: 100%;
+}
+
 .permit-comment {
   display: grid;
   gap: 8px;
@@ -1263,6 +1272,66 @@ h2 {
 .permit-notification-item span,
 .permit-notification-item small {
   color: #60766d;
+}
+
+.permit-description-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid rgba(20, 38, 31, 0.08);
+  border-radius: 18px;
+  background: #fbfdfc;
+}
+
+.permit-description-card pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  color: #28433a;
+  line-height: 1.7;
+}
+
+.permit-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.permit-modal {
+  width: min(1120px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 30px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.permit-modal-header,
+.permit-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.permit-modal-form,
+.permit-section-list {
+  display: grid;
+  gap: 18px;
+}
+
+.permit-modal-section {
+  border: 1px solid rgba(20, 38, 31, 0.08);
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff, #f8fbfa);
+  padding: 18px;
 }
 
 .variant-strip {

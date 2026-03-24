@@ -225,8 +225,9 @@ modulesRouter.get("/permitsToWork/:id/export", async (request, response, next) =
       return;
     }
 
-    const file = await exportPermitToWork(authRequest.authUser, request.params.id);
-    response.setHeader("Content-Type", "text/csv; charset=utf-8");
+    const format = request.query.format === "csv" ? "csv" : "pdf";
+    const file = await exportPermitToWork(authRequest.authUser, request.params.id, format);
+    response.setHeader("Content-Type", file.contentType);
     response.setHeader("Content-Disposition", `attachment; filename=\"${file.filename}\"`);
     response.send(file.content);
   } catch (error) {

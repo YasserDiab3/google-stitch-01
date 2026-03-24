@@ -75,8 +75,24 @@ type PermitFormState = {
   siteId: string;
   contractorId: string;
   description: string;
+  permitTitle: string;
+  exactLocation: string;
+  contractorSupervisor: string;
+  requestingDepartment: string;
+  contactPhone: string;
   validFrom: string;
   validTo: string;
+  shift: string;
+  manpowerCount: string;
+  equipmentUsed: string;
+  scopeOfWork: string;
+  hazards: string;
+  isolations: string;
+  ppe: string;
+  emergencyPlan: string;
+  rescueEquipment: string;
+  issuerNotes: string;
+  attachmentsChecklist: string;
 };
 
 type WorkforceFormState = {
@@ -105,6 +121,71 @@ type ClinicFormState = {
 };
 
 type ClinicTab = "visits" | "medications" | "history";
+
+function createEmptyPermitForm(meta?: PermitMetaPayload | null): PermitFormState {
+  return {
+    workType: meta?.permitTypes[0]?.value || "Hot Work",
+    siteId: meta?.sites[0]?.id || "",
+    contractorId: meta?.contractors[0]?.id || "",
+    description: "",
+    permitTitle: "",
+    exactLocation: "",
+    contractorSupervisor: "",
+    requestingDepartment: "",
+    contactPhone: "",
+    validFrom: "",
+    validTo: "",
+    shift: "نهاري",
+    manpowerCount: "",
+    equipmentUsed: "",
+    scopeOfWork: "",
+    hazards: "",
+    isolations: "",
+    ppe: "",
+    emergencyPlan: "",
+    rescueEquipment: "",
+    issuerNotes: "",
+    attachmentsChecklist: ""
+  };
+}
+
+function buildPermitDescription(form: PermitFormState, meta: PermitMetaPayload | null) {
+  const siteName = meta?.sites.find((site) => site.id === form.siteId)?.name || "-";
+  const contractorName = meta?.contractors.find((contractor) => contractor.id === form.contractorId)?.full_name || "-";
+
+  const sections = [
+    ["1. المعلومات الأساسية", [`عنوان التصريح: ${form.permitTitle || "-"}`, `نوع التصريح: ${form.workType}`]],
+    ["2. الموقع والمنطقة", [`الموقع: ${siteName}`, `المكان التفصيلي: ${form.exactLocation || "-"}`]],
+    [
+      "3. بيانات المقاول والطالب",
+      [
+        `المقاول: ${contractorName}`,
+        `مشرف المقاول: ${form.contractorSupervisor || "-"}`,
+        `القسم الطالب: ${form.requestingDepartment || "-"}`,
+        `هاتف التواصل: ${form.contactPhone || "-"}`
+      ]
+    ],
+    [
+      "4. التوقيت والتنفيذ",
+      [
+        `بداية التصريح: ${form.validFrom || "-"}`,
+        `نهاية التصريح: ${form.validTo || "-"}`,
+        `الوردية: ${form.shift || "-"}`,
+        `عدد الأفراد: ${form.manpowerCount || "-"}`
+      ]
+    ],
+    ["5. نطاق العمل", [`المعدات المستخدمة: ${form.equipmentUsed || "-"}`, form.scopeOfWork || "-"]],
+    ["6. المخاطر المحتملة", [form.hazards || "-"]],
+    ["7. العزل والتصاريح المساندة", [form.isolations || "-"]],
+    ["8. معدات الوقاية", [form.ppe || "-"]],
+    ["9. الطوارئ والإنقاذ", [`خطة الطوارئ: ${form.emergencyPlan || "-"}`, `معدات الإنقاذ: ${form.rescueEquipment || "-"}`]],
+    ["10. الملاحظات والمرفقات", [`الملاحظات: ${form.issuerNotes || "-"}`, `قائمة المرفقات: ${form.attachmentsChecklist || "-"}`]]
+  ];
+
+  return sections
+    .map(([title, lines]) => [title, ...(lines as string[])].join("\n"))
+    .join("\n\n");
+}
 
 const loginCopy = {
   ar: {
@@ -1126,16 +1207,10 @@ function PermitsToWorkModulePage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [showPermitModal, setShowPermitModal] = useState(false);
   const [error, setError] = useState("");
   const [comment, setComment] = useState("");
-  const [form, setForm] = useState<PermitFormState>({
-    workType: "Hot Work",
-    siteId: "",
-    contractorId: "",
-    description: "",
-    validFrom: "",
-    validTo: ""
-  });
+  const [form, setForm] = useState<PermitFormState>(createEmptyPermitForm());
 
   const workflowLabels: Record<string, string> = {
     submitted: "مُرسل",
@@ -1181,6 +1256,7 @@ function PermitsToWorkModulePage({
       setRows(payload.data);
       setMeta(metaPayload.data);
       setForm((current) => ({
+        ...createEmptyPermitForm(metaPayload.data),
         ...current,
         workType: current.workType || metaPayload.data.permitTypes[0]?.value || "Hot Work",
         siteId: current.siteId || metaPayload.data.sites[0]?.id || "",
@@ -1258,7 +1334,7 @@ function PermitsToWorkModulePage({
   async function handleCreatePermit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!form.workType.trim() || !form.siteId) {
+    if (!form.workType.trim() || !form.siteId || !form.permitTitle.trim()) {
       setError("اختر نوع التصريح والموقع قبل الحفظ");
       return;
     }
@@ -1273,7 +1349,7 @@ function PermitsToWorkModulePage({
         site_id: form.siteId,
         contractor_id: form.contractorId || null,
         contractor_name: selectedContractor?.full_name || null,
-        description: form.description.trim() || null,
+        description: buildPermitDescription(form, meta).trim() || null,
         requested_by: user.id,
         valid_from: form.validFrom || null,
         valid_to: form.validTo || null
@@ -1281,14 +1357,8 @@ function PermitsToWorkModulePage({
 
       setRows((current) => [payload.data, ...current]);
       setSelectedPermitId(payload.data.id);
-      setForm({
-        workType: meta?.permitTypes[0]?.value || "Hot Work",
-        siteId: meta?.sites[0]?.id || "",
-        contractorId: meta?.contractors[0]?.id || "",
-        description: "",
-        validFrom: "",
-        validTo: ""
-      });
+      setForm(createEmptyPermitForm(meta));
+      setShowPermitModal(false);
       setActiveTab("pending");
       await loadNotifications(payload.data.id);
     } catch (saveError) {
@@ -1580,6 +1650,583 @@ function PermitsToWorkModulePage({
           ) : null}
         </article>
       </section>
+    </div>
+  );
+}
+
+function PermitsToWorkWorkspace({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [activeTab, setActiveTab] = useState<PermitTab>("all");
+  const [rows, setRows] = useState<PermitToWorkRow[]>([]);
+  const [selectedPermitId, setSelectedPermitId] = useState("");
+  const [notifications, setNotifications] = useState<PermitNotificationRow[]>([]);
+  const [meta, setMeta] = useState<PermitMetaPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [showPermitModal, setShowPermitModal] = useState(false);
+  const [error, setError] = useState("");
+  const [comment, setComment] = useState("");
+  const [form, setForm] = useState<PermitFormState>(createEmptyPermitForm());
+
+  const workflowLabels: Record<string, string> = {
+    submitted: "مرسل",
+    in_review: "قيد الاعتماد",
+    approved: "معتمد",
+    rejected: "مرفوض",
+    closed: "مغلق",
+    area_manager: "مديرة المنطقة",
+    quality: "الجودة",
+    safety: "السلامة",
+    permit_approver: "معتمد التصريح",
+    completed: "مكتمل",
+    pending: "بانتظار",
+    requester: "طالب التصريح",
+    permit_requester: "طالب التصريح"
+  };
+
+  const actorStepByRole: Partial<Record<UserRole, string>> = {
+    admin: "admin",
+    ehs_manager: "safety",
+    supervisor: "permit_approver",
+    permit_approver: "permit_approver",
+    area_manager: "area_manager",
+    quality: "quality",
+    safety: "safety"
+  };
+
+  const canCreatePermit = ["admin", "permit_requester", "supervisor", "ehs_manager"].includes(user.role);
+  const selectedPermit = rows.find((row) => row.id === selectedPermitId) || null;
+
+  function replacePermit(nextRow: PermitToWorkRow) {
+    setRows((current) => current.map((row) => (row.id === nextRow.id ? nextRow : row)));
+  }
+
+  async function loadPermits() {
+    try {
+      setLoading(true);
+      setError("");
+      const [payload, metaPayload] = await Promise.all([
+        listPermitsToWork(accessToken),
+        getPermitToWorkMeta(accessToken)
+      ]);
+      setRows(payload.data);
+      setMeta(metaPayload.data);
+      setForm((current) => ({
+        ...createEmptyPermitForm(metaPayload.data),
+        ...current,
+        workType: current.workType || metaPayload.data.permitTypes[0]?.value || "Hot Work",
+        siteId: current.siteId || metaPayload.data.sites[0]?.id || "",
+        contractorId: current.contractorId || metaPayload.data.contractors[0]?.id || ""
+      }));
+      if (!selectedPermitId && payload.data[0]) {
+        setSelectedPermitId(payload.data[0].id);
+      }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل تصاريح العمل");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadNotifications(permitId: string) {
+    try {
+      setNotificationsLoading(true);
+      const payload = await listPermitNotifications(accessToken, permitId);
+      setNotifications(payload.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل الإشعارات");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadPermits();
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (selectedPermitId) {
+      void loadNotifications(selectedPermitId);
+    }
+  }, [selectedPermitId]);
+
+  const filteredRows = rows.filter((row) => {
+    if (activeTab === "pending") return ["submitted", "in_review"].includes(row.status);
+    if (activeTab === "approved") return row.status === "approved";
+    if (activeTab === "rejected") return row.status === "rejected";
+    if (activeTab === "closed") return row.status === "closed";
+    return true;
+  });
+
+  const pendingCount = rows.filter((row) => ["submitted", "in_review"].includes(row.status)).length;
+  const approvedCount = rows.filter((row) => row.status === "approved").length;
+  const rejectedCount = rows.filter((row) => row.status === "rejected").length;
+  const closedCount = rows.filter((row) => row.status === "closed").length;
+
+  function canApprove(row: PermitToWorkRow) {
+    if (user.role === "admin") {
+      return ["submitted", "in_review"].includes(row.status) && row.current_step !== "completed";
+    }
+
+    return ["submitted", "in_review"].includes(row.status) && actorStepByRole[user.role] === row.current_step;
+  }
+
+  function canClose(row: PermitToWorkRow) {
+    return ["admin", "permit_approver", "supervisor", "ehs_manager"].includes(user.role) && ["approved", "closed"].includes(row.status);
+  }
+
+  function canExport(row: PermitToWorkRow) {
+    return ["approved", "closed"].includes(row.status);
+  }
+
+  async function handleCreatePermit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.workType.trim() || !form.siteId || !form.permitTitle.trim()) {
+      setError("أكمل نوع التصريح والموقع وعنوان التصريح قبل الحفظ");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const selectedContractor =
+        meta?.contractors.find((contractor) => contractor.id === form.contractorId) || null;
+      const payload = await createPermitToWorkEntry(accessToken, {
+        work_type: form.workType.trim(),
+        site_id: form.siteId,
+        contractor_id: form.contractorId || null,
+        contractor_name: selectedContractor?.full_name || null,
+        description: buildPermitDescription(form, meta).trim() || null,
+        requested_by: user.id,
+        valid_from: form.validFrom || null,
+        valid_to: form.validTo || null
+      });
+
+      setRows((current) => [payload.data, ...current]);
+      setSelectedPermitId(payload.data.id);
+      setForm(createEmptyPermitForm(meta));
+      setShowPermitModal(false);
+      setActiveTab("pending");
+      await loadNotifications(payload.data.id);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء تصريح العمل");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleOpenPermit(row: PermitToWorkRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await openPermitToWorkEntry(accessToken, row.id);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      await loadNotifications(row.id);
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : "تعذر فتح التصريح");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDecision(row: PermitToWorkRow, action: "approve" | "reject") {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await decidePermitToWorkEntry(accessToken, row.id, action, action === "reject" ? comment : undefined);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      setComment("");
+      await loadNotifications(row.id);
+    } catch (decisionError) {
+      setError(decisionError instanceof Error ? decisionError.message : "تعذر تحديث دورة الاعتماد");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClosePermit(row: PermitToWorkRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await closePermitToWorkEntry(accessToken, row.id);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      await loadNotifications(row.id);
+    } catch (closeError) {
+      setError(closeError instanceof Error ? closeError.message : "تعذر إغلاق التصريح");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleExportPermit(row: PermitToWorkRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const file = await exportPermitToWorkEntry(accessToken, row.id);
+      const url = URL.createObjectURL(file.blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      await loadPermits();
+      await loadNotifications(row.id);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "تعذر تصدير التصريح");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const permitSections = [
+    { title: "1. بيانات التصريح الأساسية", body: (
+      <div className="risk-form-grid">
+        <label>
+          رقم التصريح
+          <input value={meta?.nextPermitNo || "جارٍ التوليد..."} readOnly />
+        </label>
+        <label>
+          عنوان التصريح
+          <input value={form.permitTitle} onChange={(event) => setForm((current) => ({ ...current, permitTitle: event.target.value }))} placeholder="عنوان مختصر للتصريح" />
+        </label>
+        <label>
+          نوع التصريح
+          <select value={form.workType} onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))}>
+            {(meta?.permitTypes || []).map((permitType) => (
+              <option key={permitType.value} value={permitType.value}>{permitType.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    ) },
+    { title: "2. الموقع والمنطقة", body: (
+      <div className="risk-form-grid">
+        <label>
+          الموقع / المنطقة
+          <select value={form.siteId} onChange={(event) => setForm((current) => ({ ...current, siteId: event.target.value }))}>
+            {(meta?.sites || []).map((site) => (
+              <option key={site.id} value={site.id}>{site.name}{site.code ? ` (${site.code})` : ""}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          الموقع التفصيلي
+          <input value={form.exactLocation} onChange={(event) => setForm((current) => ({ ...current, exactLocation: event.target.value }))} placeholder="وصف المكان التفصيلي" />
+        </label>
+      </div>
+    ) },
+    { title: "3. بيانات المقاول والطلب", body: (
+      <div className="risk-form-grid">
+        <label>
+          المقاول
+          <select value={form.contractorId} onChange={(event) => setForm((current) => ({ ...current, contractorId: event.target.value }))}>
+            <option value="">بدون مقاول محدد</option>
+            {(meta?.contractors || []).map((contractor) => (
+              <option key={contractor.id} value={contractor.id}>{contractor.full_name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          مشرف المقاول
+          <input value={form.contractorSupervisor} onChange={(event) => setForm((current) => ({ ...current, contractorSupervisor: event.target.value }))} />
+        </label>
+        <label>
+          القسم الطالب
+          <input value={form.requestingDepartment} onChange={(event) => setForm((current) => ({ ...current, requestingDepartment: event.target.value }))} />
+        </label>
+        <label>
+          هاتف التواصل
+          <input value={form.contactPhone} onChange={(event) => setForm((current) => ({ ...current, contactPhone: event.target.value }))} />
+        </label>
+      </div>
+    ) },
+    { title: "4. مدة التصريح", body: (
+      <div className="risk-form-grid">
+        <label>
+          صالح من
+          <input type="datetime-local" value={form.validFrom} onChange={(event) => setForm((current) => ({ ...current, validFrom: event.target.value }))} />
+        </label>
+        <label>
+          صالح إلى
+          <input type="datetime-local" value={form.validTo} onChange={(event) => setForm((current) => ({ ...current, validTo: event.target.value }))} />
+        </label>
+        <label>
+          الوردية
+          <select value={form.shift} onChange={(event) => setForm((current) => ({ ...current, shift: event.target.value }))}>
+            <option value="نهاري">نهاري</option>
+            <option value="ليلي">ليلي</option>
+            <option value="ممتد">ممتد</option>
+          </select>
+        </label>
+        <label>
+          عدد الأفراد
+          <input value={form.manpowerCount} onChange={(event) => setForm((current) => ({ ...current, manpowerCount: event.target.value }))} />
+        </label>
+      </div>
+    ) },
+    { title: "5. نطاق العمل", body: (
+      <>
+        <label>
+          المعدات المستخدمة
+          <input value={form.equipmentUsed} onChange={(event) => setForm((current) => ({ ...current, equipmentUsed: event.target.value }))} />
+        </label>
+        <label>
+          وصف نطاق العمل
+          <textarea value={form.scopeOfWork} onChange={(event) => setForm((current) => ({ ...current, scopeOfWork: event.target.value }))} />
+        </label>
+      </>
+    ) },
+    { title: "6. المخاطر المحتملة", body: (
+      <label>
+        تقييم المخاطر
+        <textarea value={form.hazards} onChange={(event) => setForm((current) => ({ ...current, hazards: event.target.value }))} />
+      </label>
+    ) },
+    { title: "7. العزل والتأمين", body: (
+      <label>
+        إجراءات العزل والتأمين
+        <textarea value={form.isolations} onChange={(event) => setForm((current) => ({ ...current, isolations: event.target.value }))} />
+      </label>
+    ) },
+    { title: "8. معدات الوقاية", body: (
+      <label>
+        معدات الوقاية المطلوبة
+        <textarea value={form.ppe} onChange={(event) => setForm((current) => ({ ...current, ppe: event.target.value }))} />
+      </label>
+    ) },
+    { title: "9. الطوارئ والإنقاذ", body: (
+      <>
+        <label>
+          خطة الطوارئ
+          <textarea value={form.emergencyPlan} onChange={(event) => setForm((current) => ({ ...current, emergencyPlan: event.target.value }))} />
+        </label>
+        <label>
+          معدات الإنقاذ
+          <textarea value={form.rescueEquipment} onChange={(event) => setForm((current) => ({ ...current, rescueEquipment: event.target.value }))} />
+        </label>
+      </>
+    ) },
+    { title: "10. الملاحظات والمرفقات", body: (
+      <>
+        <label>
+          ملاحظات المصدر
+          <textarea value={form.issuerNotes} onChange={(event) => setForm((current) => ({ ...current, issuerNotes: event.target.value }))} />
+        </label>
+        <label>
+          قائمة المرفقات
+          <textarea value={form.attachmentsChecklist} onChange={(event) => setForm((current) => ({ ...current, attachmentsChecklist: event.target.value }))} />
+        </label>
+      </>
+    ) }
+  ];
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card">
+        <div className="risk-tabs">
+          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>كل التصاريح</button>
+          <button className={activeTab === "pending" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("pending")}>بانتظار الاعتماد</button>
+          <button className={activeTab === "approved" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("approved")}>المعتمدة</button>
+          <button className={activeTab === "rejected" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("rejected")}>المرفوضة</button>
+          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>المغلقة</button>
+        </div>
+
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card"><strong>{rows.length}</strong><span>إجمالي التصاريح</span></article>
+          <article className="risk-summary-card"><strong>{pendingCount}</strong><span>في دائرة الاعتماد</span></article>
+          <article className="risk-summary-card"><strong>{approvedCount}</strong><span>معتمدة وجاهزة</span></article>
+          <article className="risk-summary-card"><strong>{rejectedCount + closedCount}</strong><span>مرفوضة أو مغلقة</span></article>
+        </div>
+      </section>
+
+      {error ? <div className="form-error">{error}</div> : null}
+
+      <section className="risk-layout permit-layout">
+        <article className="preview-card risk-form-card permit-create-card">
+          <div className="card-head">
+            <h3>إصدار تصريح جديد</h3>
+            <span>نموذج منظم في 10 أقسام مع اعتماد تلقائي متسلسل</span>
+          </div>
+          <div className="permit-workflow-list">
+            <div className="permit-workflow-step active">1. طالب التصريح</div>
+            <div className="permit-workflow-step">2. مديرة المنطقة</div>
+            <div className="permit-workflow-step">3. الجودة</div>
+            <div className="permit-workflow-step">4. السلامة</div>
+            <div className="permit-workflow-step">5. معتمد التصريح</div>
+          </div>
+          {canCreatePermit ? (
+            <button className="button permit-launch-button" type="button" onClick={() => setShowPermitModal(true)}>
+              إضافة تصريح
+            </button>
+          ) : null}
+        </article>
+
+        <article className="preview-card risk-table-card">
+          <div className="card-head">
+            <h3>سجل التصاريح</h3>
+            <span>{activeTab === "all" ? "عرض شامل" : "عرض حسب الحالة"}</span>
+          </div>
+
+          {loading ? <div className="empty-state">جارٍ تحميل تصاريح العمل...</div> : null}
+
+          {!loading ? (
+            <div className="risk-table">
+              <div className="risk-table-head permit-table-head">
+                <span>رقم التصريح</span>
+                <span>نوع العمل</span>
+                <span>المنطقة</span>
+                <span>الحالة</span>
+                <span>الدور الحالي</span>
+                <span>إجراء</span>
+              </div>
+              {filteredRows.map((row) => (
+                <div className={`risk-row permit-row ${selectedPermitId === row.id ? "selected" : ""}`} key={row.id}>
+                  <strong>{row.permit_no}</strong>
+                  <span>{row.work_type}</span>
+                  <span>{row.area || "-"}</span>
+                  <span className={`risk-status risk-status-${row.status}`}>{workflowLabels[row.status] || row.status}</span>
+                  <span>{workflowLabels[row.current_step] || row.current_step}</span>
+                  <div className="risk-actions">
+                    <button type="button" onClick={() => void handleOpenPermit(row)}>فتح</button>
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "approve")}>اعتماد</button> : null}
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "reject")}>رفض</button> : null}
+                    {canClose(row) && row.status !== "closed" ? <button type="button" onClick={() => void handleClosePermit(row)}>إغلاق</button> : null}
+                    {canExport(row) ? <button type="button" onClick={() => void handleExportPermit(row)}>PDF</button> : null}
+                  </div>
+                </div>
+              ))}
+              {!filteredRows.length ? <div className="empty-state">لا توجد تصاريح مطابقة لهذا التبويب.</div> : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+
+      <section className="permit-detail-grid">
+        <article className="preview-card permit-detail-card">
+          <div className="card-head">
+            <h3>تفاصيل التصريح</h3>
+            <span>{selectedPermit ? selectedPermit.permit_no : "اختر تصريحًا من السجل"}</span>
+          </div>
+
+          {selectedPermit ? (
+            <div className="permit-detail-stack">
+              <div className="permit-detail-meta">
+                <div><small>نوع العمل</small><strong>{selectedPermit.work_type}</strong></div>
+                <div><small>الموقع / المنطقة</small><strong>{selectedPermit.area || "-"}</strong></div>
+                <div><small>المقاول</small><strong>{selectedPermit.contractor_name || "-"}</strong></div>
+                <div><small>الحالة</small><strong>{workflowLabels[selectedPermit.status] || selectedPermit.status}</strong></div>
+                <div><small>صالح من</small><strong>{selectedPermit.valid_from || "-"}</strong></div>
+                <div><small>صالح إلى</small><strong>{selectedPermit.valid_to || "-"}</strong></div>
+              </div>
+
+              <div className="permit-description-card">
+                <h4>بيانات التصريح المجمعة</h4>
+                <pre>{selectedPermit.description || "لا توجد بيانات تفصيلية بعد."}</pre>
+              </div>
+
+              <div className="permit-workflow-list">
+                <div className={`permit-workflow-step ${selectedPermit.area_manager_status}`}>مديرة المنطقة: {workflowLabels[selectedPermit.area_manager_status] || selectedPermit.area_manager_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.quality_status}`}>الجودة: {workflowLabels[selectedPermit.quality_status] || selectedPermit.quality_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.safety_status}`}>السلامة: {workflowLabels[selectedPermit.safety_status] || selectedPermit.safety_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.permit_approver_status}`}>معتمد التصريح: {workflowLabels[selectedPermit.permit_approver_status] || selectedPermit.permit_approver_status}</div>
+              </div>
+
+              {canApprove(selectedPermit) ? (
+                <label className="permit-comment">
+                  تعليق الاعتماد / الرفض
+                  <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="أدخل مبررًا إضافيًا عند الحاجة، خاصةً في حالة الرفض." />
+                </label>
+              ) : null}
+
+              {selectedPermit.rejection_reason ? <div className="form-error permit-inline-note">{selectedPermit.rejection_reason}</div> : null}
+            </div>
+          ) : (
+            <div className="empty-state">اختر تصريحًا من السجل لعرض التفاصيل.</div>
+          )}
+        </article>
+
+        <article className="preview-card permit-detail-card">
+          <div className="card-head">
+            <h3>الإشعارات والاعتمادات</h3>
+            <span>{notificationsLoading ? "جارٍ التحديث..." : `${notifications.length} إشعار`}</span>
+          </div>
+          <div className="permit-notification-list">
+            {notifications.map((notification) => (
+              <div className="permit-notification-item" key={notification.id}>
+                <strong>{notification.message}</strong>
+                <span>{workflowLabels[notification.recipient_role] || notification.recipient_role}</span>
+                <small>{new Date(notification.created_at).toLocaleString()}</small>
+              </div>
+            ))}
+            {!notifications.length ? <div className="empty-state">لا توجد إشعارات لهذا التصريح بعد.</div> : null}
+          </div>
+        </article>
+      </section>
+
+      {showPermitModal ? (
+        <div className="permit-modal-backdrop" onClick={() => setShowPermitModal(false)}>
+          <div className="permit-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="permit-modal-header">
+              <div>
+                <h3>إضافة تصريح عمل</h3>
+                <span>النموذج مقسم إلى 10 أقسام رئيسية</span>
+              </div>
+              <button className="secondary-button" type="button" onClick={() => setShowPermitModal(false)}>
+                إغلاق
+              </button>
+            </div>
+
+            <form className="permit-modal-form" onSubmit={handleCreatePermit}>
+              <div className="permit-section-list">
+                {permitSections.map((section) => (
+                  <section className="permit-modal-section" key={section.title}>
+                    <div className="card-head">
+                      <h4>{section.title}</h4>
+                    </div>
+                    <div className="risk-form">
+                      {section.body}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              <div className="permit-modal-footer">
+                <button className="secondary-button" type="button" onClick={() => setForm(createEmptyPermitForm(meta))}>
+                  إعادة تعيين
+                </button>
+                <button className="button" type="submit" disabled={saving}>
+                  {saving ? "جارٍ إصدار التصريح..." : "حفظ وإرسال التصريح"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2750,7 +3397,7 @@ function ModulePage({
   }
 
   if (moduleRoute.key === "permitsToWork") {
-    return <PermitsToWorkModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+    return <PermitsToWorkWorkspace accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   if (moduleRoute.key === "employees" || moduleRoute.key === "contractors") {

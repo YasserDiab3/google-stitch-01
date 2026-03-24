@@ -422,7 +422,7 @@ export async function exportPermitToWorkEntry(token: string, id: string) {
     throw new Error("Backend unavailable");
   }
 
-  const response = await fetch(`${apiBaseUrl}/modules/permitsToWork/${id}/export`, {
+  const response = await fetch(`${apiBaseUrl}/modules/permitsToWork/${id}/export?format=pdf`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -439,7 +439,7 @@ export async function exportPermitToWorkEntry(token: string, id: string) {
 
   return {
     blob,
-    filename: filenameMatch?.[1] || "permit-export.csv"
+    filename: filenameMatch?.[1] || "permit-export.pdf"
   };
 }
 

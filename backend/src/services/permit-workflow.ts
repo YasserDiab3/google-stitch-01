@@ -61,6 +61,7 @@ type CreatePermitPayload = {
 };
 
 type DecisionAction = "approve" | "reject";
+type ExportFormat = "csv" | "pdf";
 
 const workflowOrder = [
   "area_manager",
@@ -133,6 +134,88 @@ async function insertNotification(
 function getNextStep(step: WorkflowStep): WorkflowStep | null {
   const index = workflowOrder.indexOf(step);
   return workflowOrder[index + 1] ?? null;
+}
+
+function escapePdfText(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function wrapPdfLine(value: string, maxLength = 86) {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxLength) {
+      if (current) {
+        lines.push(current);
+      }
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length ? lines : [value];
+}
+
+function buildPermitPdf(permit: PermitWorkflowRow) {
+  const printableLines = [
+    "Permit To Work",
+    `Permit No: ${permit.permit_no}`,
+    `Work Type: ${permit.work_type}`,
+    `Area / Site: ${permit.area || "-"}`,
+    `Status: ${permit.status}`,
+    `Current Step: ${permit.current_step}`,
+    `Contractor: ${permit.contractor_name || "-"}`,
+    `Valid From: ${permit.valid_from || "-"}`,
+    `Valid To: ${permit.valid_to || "-"}`,
+    "",
+    "Permit Details:",
+    ...(permit.description ? permit.description.split("\n").flatMap((line) => wrapPdfLine(line)) : ["-"])
+  ];
+
+  let y = 800;
+  const contentLines: string[] = ["BT", "/F1 11 Tf"];
+  for (const line of printableLines) {
+    contentLines.push(`1 0 0 1 48 ${y} Tm (${escapePdfText(line)}) Tj`);
+    y -= line === "" ? 12 : 16;
+    if (y < 60) {
+      break;
+    }
+  }
+  contentLines.push("ET");
+
+  const contentStream = contentLines.join("\n");
+  const objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj",
+    "2 0 obj << /Type /Pages /Count 1 /Kids [3 0 R] >> endobj",
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 4 0 R >> >> >> endobj",
+    "4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj",
+    `5 0 obj << /Length ${Buffer.byteLength(contentStream, "utf8")} >> stream\n${contentStream}\nendstream endobj`
+  ];
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  for (const object of objects) {
+    offsets.push(Buffer.byteLength(pdf, "utf8"));
+    pdf += `${object}\n`;
+  }
+
+  const xrefStart = Buffer.byteLength(pdf, "utf8");
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (let index = 1; index <= objects.length; index += 1) {
+    pdf += `${String(offsets[index]).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+  return Buffer.from(pdf, "utf8");
 }
 
 async function generateNextPermitNo() {
@@ -427,7 +510,11 @@ export async function closePermitToWork(user: AuthenticatedUser, permitId: strin
   return data as PermitWorkflowRow;
 }
 
-export async function exportPermitToWork(user: AuthenticatedUser, permitId: string) {
+export async function exportPermitToWork(
+  user: AuthenticatedUser,
+  permitId: string,
+  format: ExportFormat = "pdf"
+) {
   const { data, error } = await supabaseAdmin
     .from("permits_to_work")
     .select("*")
@@ -458,25 +545,34 @@ export async function exportPermitToWork(user: AuthenticatedUser, permitId: stri
     user.id
   );
 
-  const lines = [
-    "permit_no,work_type,area,status,current_step,valid_from,valid_to,contractor_name",
-    [
-      permit.permit_no,
-      permit.work_type,
-      permit.area || "",
-      permit.status,
-      permit.current_step,
-      permit.valid_from || "",
-      permit.valid_to || "",
-      permit.contractor_name || ""
-    ]
-      .map((value) => `"${String(value).replaceAll("\"", "\"\"")}"`)
-      .join(",")
-  ];
+  if (format === "csv") {
+    const lines = [
+      "permit_no,work_type,area,status,current_step,valid_from,valid_to,contractor_name",
+      [
+        permit.permit_no,
+        permit.work_type,
+        permit.area || "",
+        permit.status,
+        permit.current_step,
+        permit.valid_from || "",
+        permit.valid_to || "",
+        permit.contractor_name || ""
+      ]
+        .map((value) => `"${String(value).replaceAll("\"", "\"\"")}"`)
+        .join(",")
+    ];
+
+    return {
+      filename: `${permit.permit_no}.csv`,
+      contentType: "text/csv; charset=utf-8",
+      content: lines.join("\n")
+    };
+  }
 
   return {
-    filename: `${permit.permit_no}.csv`,
-    content: lines.join("\n")
+    filename: `${permit.permit_no}.pdf`,
+    contentType: "application/pdf",
+    content: buildPermitPdf(permit)
   };
 }
 
