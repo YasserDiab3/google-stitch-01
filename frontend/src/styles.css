@@ -352,6 +352,11 @@ h2 {
   color: #15803d;
 }
 
+.recovery-hint {
+  color: #64748b;
+  font-weight: 700;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

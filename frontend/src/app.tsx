@@ -22,6 +22,8 @@ type LoginState = {
   error: string;
 };
 
+type RecoveryState = "request" | "reset";
+
 type AuthLocale = "ar" | "en";
 
 const loginCopy = {
@@ -55,6 +57,14 @@ const loginCopy = {
     sendReset: "إرسال رابط الاستعادة",
     sendingReset: "جاري الإرسال...",
     resetSent: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+    newPassword: "كلمة المرور الجديدة",
+    confirmPassword: "تأكيد كلمة المرور الجديدة",
+    resetPassword: "تعيين كلمة المرور الجديدة",
+    updatingPassword: "جاري تحديث كلمة المرور...",
+    passwordUpdated: "تم تحديث كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.",
+    recoveryInvalid: "رابط الاستعادة غير صالح أو منتهي. اطلب رابطاً جديداً.",
+    passwordMismatch: "كلمتا المرور غير متطابقتين.",
+    passwordTooShort: "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.",
     backToLogin: "العودة إلى تسجيل الدخول",
     safetyManual: "دليل السلامة",
     privacy: "الخصوصية",
@@ -91,6 +101,14 @@ const loginCopy = {
     sendReset: "Send Reset Link",
     sendingReset: "Sending...",
     resetSent: "Password reset link sent successfully to your email.",
+    newPassword: "NEW PASSWORD",
+    confirmPassword: "CONFIRM PASSWORD",
+    resetPassword: "Set New Password",
+    updatingPassword: "Updating password...",
+    passwordUpdated: "Password updated successfully. You can sign in now.",
+    recoveryInvalid: "Recovery link is invalid or expired. Request a new one.",
+    passwordMismatch: "Passwords do not match.",
+    passwordTooShort: "Password must be at least 8 characters.",
     backToLogin: "Back to login",
     safetyManual: "SAFETY MANUAL",
     privacy: "PRIVACY",
@@ -344,10 +362,91 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
   const navigate = useNavigate();
   const [locale, setLocale] = useState<AuthLocale>("ar");
   const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [recoveryState, setRecoveryState] = useState<RecoveryState>("request");
+  const [checkingRecovery, setCheckingRecovery] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const copy = loginCopy[locale];
+
+  useEffect(() => {
+    let active = true;
+
+    async function establishRecoverySession() {
+      if (!supabase) {
+        if (active) {
+          setCheckingRecovery(false);
+        }
+        return;
+      }
+
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const tokenHash = searchParams.get("token_hash");
+        const typeParam = searchParams.get("type");
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const hashType = hashParams.get("type");
+
+        if (tokenHash && typeParam === "recovery") {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery"
+          });
+
+          if (verifyError) {
+            throw verifyError;
+          }
+
+          if (active) {
+            setRecoveryState("reset");
+            window.history.replaceState({}, document.title, "/forgot-password");
+          }
+        } else if (accessToken && refreshToken && hashType === "recovery") {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (sessionError) {
+            throw sessionError;
+          }
+
+          if (active) {
+            setRecoveryState("reset");
+            window.history.replaceState({}, document.title, "/forgot-password");
+          }
+        } else {
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
+
+          if (active && session) {
+            setRecoveryState("reset");
+          }
+        }
+      } catch (recoveryError) {
+        if (active) {
+          setError(
+            recoveryError instanceof Error ? recoveryError.message : copy.recoveryInvalid
+          );
+        }
+      } finally {
+        if (active) {
+          setCheckingRecovery(false);
+        }
+      }
+    }
+
+    void establishRecoverySession();
+
+    return () => {
+      active = false;
+    };
+  }, [copy.recoveryInvalid]);
 
   async function handleReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -367,7 +466,7 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
     setLoading(true);
 
     try {
-      const redirectTo = `${window.location.origin}/login`;
+      const redirectTo = `${window.location.origin}/forgot-password`;
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo
       });
@@ -379,6 +478,47 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
       setMessage(copy.resetSent);
     } catch (resetError) {
       setError(resetError instanceof Error ? resetError.message : copy.warning);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleUpdatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!supabase) {
+      setError(copy.warning);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setError(copy.passwordTooShort);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError(copy.passwordMismatch);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setMessage(copy.passwordUpdated);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : copy.recoveryInvalid);
     } finally {
       setLoading(false);
     }
@@ -424,28 +564,69 @@ function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
               <p>{copy.resetBody}</p>
             </div>
 
-            <form className="login-form polished-login-form" onSubmit={handleReset}>
-              <label>
-                {copy.username}
-                <div className="input-shell">
-                  <span className="input-icon">✉️</span>
-                  <input
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    type="email"
-                    placeholder={copy.usernamePlaceholder}
-                  />
-                </div>
-              </label>
+            {checkingRecovery ? <div className="recovery-hint">Checking recovery session...</div> : null}
 
-              {error ? <p className="form-error">{error}</p> : null}
-              {message ? <p className="form-success">{message}</p> : null}
-              {!isConfigured ? <p className="form-warning">{copy.warning}</p> : null}
+            {!checkingRecovery && recoveryState === "request" ? (
+              <form className="login-form polished-login-form" onSubmit={handleReset}>
+                <label>
+                  {copy.username}
+                  <div className="input-shell">
+                    <span className="input-icon">✉️</span>
+                    <input
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      type="email"
+                      placeholder={copy.usernamePlaceholder}
+                    />
+                  </div>
+                </label>
 
-              <button className="button login-button primary-auth-button" type="submit" disabled={loading}>
-                {loading ? copy.sendingReset : copy.sendReset}
-              </button>
-            </form>
+                {error ? <p className="form-error">{error}</p> : null}
+                {message ? <p className="form-success">{message}</p> : null}
+                {!isConfigured ? <p className="form-warning">{copy.warning}</p> : null}
+
+                <button className="button login-button primary-auth-button" type="submit" disabled={loading}>
+                  {loading ? copy.sendingReset : copy.sendReset}
+                </button>
+              </form>
+            ) : null}
+
+            {!checkingRecovery && recoveryState === "reset" ? (
+              <form className="login-form polished-login-form" onSubmit={handleUpdatePassword}>
+                <label>
+                  {copy.newPassword}
+                  <div className="input-shell">
+                    <span className="input-icon">🔒</span>
+                    <input
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      type="password"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </label>
+
+                <label>
+                  {copy.confirmPassword}
+                  <div className="input-shell">
+                    <span className="input-icon">🔐</span>
+                    <input
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      type="password"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </label>
+
+                {error ? <p className="form-error">{error}</p> : null}
+                {message ? <p className="form-success">{message}</p> : null}
+
+                <button className="button login-button primary-auth-button" type="submit" disabled={loading}>
+                  {loading ? copy.updatingPassword : copy.resetPassword}
+                </button>
+              </form>
+            ) : null}
 
             <button className="ghost-back" type="button" onClick={() => navigate("/login")}>
               {copy.backToLogin}
