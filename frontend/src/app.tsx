@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  createClinicRecordEntry,
   closePermitToWorkEntry,
   createManagedUserEntry,
   createWorkforceEntry,
@@ -13,6 +14,7 @@ import {
   fetchAllowedScreens,
   fetchCurrentUser,
   getPermitToWorkMeta,
+  listClinicRecords,
   listPermitNotifications,
   listRiskRegistry,
   listPermitsToWork,
@@ -22,6 +24,7 @@ import {
   updateManagedUserEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type ClinicRecordRow,
   type ManagedUserRow,
   type PermitMetaPayload,
   type PermitNotificationRow,
@@ -88,6 +91,14 @@ type ManagedUserFormState = {
   role: UserRole;
   department: string;
   locale: string;
+};
+
+type ClinicFormState = {
+  patientName: string;
+  visitDate: string;
+  caseType: string;
+  diagnosis: string;
+  treatment: string;
 };
 
 const loginCopy = {
@@ -1775,6 +1786,250 @@ function WorkforceModulePage({
   );
 }
 
+function ClinicModulePage({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [rows, setRows] = useState<ClinicRecordRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<ClinicFormState>({
+    patientName: "",
+    visitDate: "",
+    caseType: "مراجعة دورية",
+    diagnosis: "",
+    treatment: ""
+  });
+
+  async function loadClinicRecords() {
+    try {
+      setLoading(true);
+      setError("");
+      const payload = await listClinicRecords(accessToken);
+      setRows(payload.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل سجلات العيادة");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadClinicRecords();
+  }, [accessToken]);
+
+  async function handleCreateClinicRecord(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.patientName.trim()) {
+      setError("أدخل اسم الحالة قبل الحفظ");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createClinicRecordEntry(accessToken, {
+        patient_name: form.patientName.trim(),
+        visit_date: form.visitDate || new Date().toISOString(),
+        case_type: form.caseType.trim() || null,
+        diagnosis: form.diagnosis.trim() || null,
+        treatment: form.treatment.trim() || null
+      });
+
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        patientName: "",
+        visitDate: "",
+        caseType: "مراجعة دورية",
+        diagnosis: "",
+        treatment: ""
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ السجل الطبي");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const todayVisits = rows.filter((row) => {
+    const visitDate = new Date(row.visit_date);
+    const now = new Date();
+    return (
+      visitDate.getFullYear() === now.getFullYear() &&
+      visitDate.getMonth() === now.getMonth() &&
+      visitDate.getDate() === now.getDate()
+    );
+  }).length;
+
+  const observationCases = rows.filter((row) =>
+    (row.case_type || "").includes("متابعة") || (row.treatment || "").includes("ملاحظة")
+  ).length;
+
+  const uniqueCaseTypes = new Set(rows.map((row) => row.case_type || "غير محدد")).size;
+  const recentRows = [...rows].sort(
+    (left, right) => new Date(right.visit_date).getTime() - new Date(left.visit_date).getTime()
+  );
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero clinic-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card clinic-summary-shell">
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{rows.length}</strong>
+            <span>إجمالي السجلات الطبية</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{todayVisits}</strong>
+            <span>زيارات اليوم</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{observationCases}</strong>
+            <span>حالات متابعة</span>
+          </article>
+          <article className="risk-summary-card clinic-summary-card">
+            <strong>{uniqueCaseTypes}</strong>
+            <span>أنواع حالات</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card clinic-activity-card">
+          <div className="card-head">
+            <h3>لوحة الزيارات الطبية</h3>
+            <span>عرض حي للحالات الأخيرة</span>
+          </div>
+
+          <div className="clinic-activity-list">
+            {recentRows.slice(0, 5).map((row) => (
+              <div className="clinic-activity-item" key={row.id}>
+                <div className="clinic-avatar">{row.patient_name.slice(0, 2).toUpperCase()}</div>
+                <div className="clinic-activity-content">
+                  <strong>{row.patient_name}</strong>
+                  <span>{row.case_type || "حالة عامة"}</span>
+                  <small>{new Date(row.visit_date).toLocaleString()}</small>
+                </div>
+                <div className="clinic-activity-tag">{row.diagnosis || "تقييم أولي"}</div>
+              </div>
+            ))}
+            {!recentRows.length ? <div className="empty-state">لا توجد زيارات مسجلة بعد.</div> : null}
+          </div>
+        </article>
+
+        <article className="preview-card risk-form-card clinic-form-card">
+          <div className="card-head">
+            <h3>إضافة زيارة طبية</h3>
+          </div>
+
+          <form className="risk-form" onSubmit={handleCreateClinicRecord}>
+            <label>
+              اسم الحالة
+              <input
+                value={form.patientName}
+                onChange={(event) => setForm((current) => ({ ...current, patientName: event.target.value }))}
+                placeholder="اسم الموظف أو المقاول"
+              />
+            </label>
+            <label>
+              تاريخ الزيارة
+              <input
+                type="datetime-local"
+                value={form.visitDate}
+                onChange={(event) => setForm((current) => ({ ...current, visitDate: event.target.value }))}
+              />
+            </label>
+            <label>
+              نوع الحالة
+              <select
+                value={form.caseType}
+                onChange={(event) => setForm((current) => ({ ...current, caseType: event.target.value }))}
+              >
+                <option value="مراجعة دورية">مراجعة دورية</option>
+                <option value="إجهاد حراري">إجهاد حراري</option>
+                <option value="إصابة بسيطة">إصابة بسيطة</option>
+                <option value="تعرض كيميائي">تعرض كيميائي</option>
+                <option value="متابعة">متابعة</option>
+              </select>
+            </label>
+            <label>
+              التشخيص
+              <input
+                value={form.diagnosis}
+                onChange={(event) => setForm((current) => ({ ...current, diagnosis: event.target.value }))}
+                placeholder="التشخيص أو الملاحظة الطبية"
+              />
+            </label>
+            <label>
+              الإجراء العلاجي
+              <textarea
+                value={form.treatment}
+                onChange={(event) => setForm((current) => ({ ...current, treatment: event.target.value }))}
+                placeholder="العلاج أو التوصية الطبية"
+              />
+            </label>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ حفظ الزيارة..." : "حفظ السجل الطبي"}
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section className="preview-card clinic-table-card">
+        <div className="card-head">
+          <h3>سجل العيادة الطبية</h3>
+          <span>{rows.length} زيارة</span>
+        </div>
+
+        {error ? <div className="form-error">{error}</div> : null}
+        {loading ? <div className="empty-state">جارٍ تحميل سجلات العيادة...</div> : null}
+
+        {!loading ? (
+          <div className="risk-table">
+            <div className="risk-table-head clinic-table-head">
+              <span>الحالة</span>
+              <span>نوع الحالة</span>
+              <span>التشخيص</span>
+              <span>العلاج</span>
+              <span>تاريخ الزيارة</span>
+            </div>
+            {recentRows.map((row) => (
+              <div className="risk-row clinic-row" key={row.id}>
+                <strong>{row.patient_name}</strong>
+                <span>{row.case_type || "-"}</span>
+                <span>{row.diagnosis || "-"}</span>
+                <span>{row.treatment || "-"}</span>
+                <span>{new Date(row.visit_date).toLocaleString()}</span>
+              </div>
+            ))}
+            {!recentRows.length ? <div className="empty-state">لا توجد سجلات عيادة بعد.</div> : null}
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
 function UsersModulePage({
   accessToken,
   moduleRoute,
@@ -2070,6 +2325,10 @@ function ModulePage({
 
   if (moduleRoute.key === "employees" || moduleRoute.key === "contractors") {
     return <WorkforceModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+  }
+
+  if (moduleRoute.key === "clinic") {
+    return <ClinicModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   if (moduleRoute.key === "users") {

@@ -96,6 +96,17 @@ export type ManagedUserRow = {
   updated_at: string;
 };
 
+export type ClinicRecordRow = {
+  id: string;
+  patient_name: string;
+  visit_date: string;
+  case_type: string | null;
+  diagnosis: string | null;
+  treatment: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
@@ -256,6 +267,20 @@ export async function updateRiskRegistryEntry(
 
 export async function listPermitsToWork(token: string) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow[] }>("/modules/permitsToWork", token);
+}
+
+export async function listClinicRecords(token: string) {
+  return apiFetch<{ moduleKey: "clinic"; data: ClinicRecordRow[] }>("/modules/clinic", token);
+}
+
+export async function createClinicRecordEntry(
+  token: string,
+  payload: Partial<ClinicRecordRow> & Pick<ClinicRecordRow, "patient_name">
+) {
+  return apiFetch<{ moduleKey: "clinic"; data: ClinicRecordRow }>("/modules/clinic", token, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function listWorkforceModule(token: string, moduleKey: "employees" | "contractors") {

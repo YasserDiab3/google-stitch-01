@@ -1047,6 +1047,77 @@ h2 {
   grid-template-columns: 1.4fr 1.5fr 1.1fr 1fr 0.9fr 0.9fr;
 }
 
+.clinic-hero {
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 32%),
+    linear-gradient(135deg, #ffffff, #f4fbf9);
+}
+
+.clinic-summary-shell {
+  border: 1px solid rgba(20, 184, 166, 0.12);
+}
+
+.clinic-summary-card {
+  background: linear-gradient(180deg, #f9fffd, #f3fbf8);
+}
+
+.clinic-activity-card,
+.clinic-form-card,
+.clinic-table-card {
+  border-color: rgba(20, 184, 166, 0.12);
+}
+
+.clinic-activity-list {
+  display: grid;
+  gap: 14px;
+}
+
+.clinic-activity-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f6fbfa);
+  border: 1px solid rgba(20, 184, 166, 0.1);
+}
+
+.clinic-avatar {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #0f766e, #14b8a6);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.clinic-activity-content {
+  display: grid;
+  gap: 4px;
+}
+
+.clinic-activity-content span,
+.clinic-activity-content small {
+  color: #64807a;
+}
+
+.clinic-activity-tag {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 118, 110, 0.1);
+  color: #0f4f4a;
+  font-weight: 700;
+}
+
+.clinic-table-head,
+.clinic-row {
+  grid-template-columns: 1.2fr 1fr 1.2fr 1.2fr 1.1fr;
+}
+
 .permit-detail-grid {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
