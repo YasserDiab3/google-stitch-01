@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchAllowedModules, fetchAllowedScreens, fetchCurrentUser, type ApiUser } from "./lib/api";
@@ -21,6 +21,82 @@ type LoginState = {
   loading: boolean;
   error: string;
 };
+
+type AuthLocale = "ar" | "en";
+
+const loginCopy = {
+  ar: {
+    dir: "rtl",
+    language: "العربية",
+    secureTitle: "دخول آمن",
+    secureSubtitle: "سجّل الدخول للوصول إلى لوحة السلامة والموديولات المسموحة حسب صلاحيتك.",
+    brandHeadline: "طبقة الأمان التشغيلية الأكثر اعتماداً.",
+    brandBody:
+      "إدارة الصحة والسلامة والبيئة بمنهجية مؤسسية واضحة، وصول محمي، وتجربة تشغيل إنتاجية جاهزة.",
+    status: "كل بروتوكولات السلامة مؤمنة",
+    username: "البريد الإلكتروني / اسم المستخدم",
+    usernamePlaceholder: "user@company.com",
+    password: "كلمة المرور",
+    forgot: "نسيت كلمة المرور؟",
+    login: "الدخول إلى النظام ←",
+    authenticating: "جاري التحقق...",
+    with: "أو سجل الدخول بشكل آمن عبر",
+    touchId: "Touch ID",
+    faceId: "Face ID",
+    notes: "ملاحظات الوصول الآمن",
+    note1: "تسجيل الدخول الفعلي يتم عبر signInWithPassword.",
+    note2: "الخلفية تحمل أو تنشئ profile تلقائياً بعد نجاح الدخول.",
+    note3: "القائمة والصفحات تُحمّل من الخلفية حسب الصلاحية.",
+    warning: "إعدادات Supabase غير مكتملة داخل متغيرات البيئة.",
+    genericError: "تعذر تسجيل الدخول",
+    resetTitle: "استعادة كلمة المرور",
+    resetBody: "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين عبر Supabase Auth.",
+    resetHint: "أدخل بريدك الإلكتروني لاستلام رابط إعادة تعيين كلمة المرور.",
+    sendReset: "إرسال رابط الاستعادة",
+    sendingReset: "جاري الإرسال...",
+    resetSent: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+    backToLogin: "العودة إلى تسجيل الدخول",
+    safetyManual: "دليل السلامة",
+    privacy: "الخصوصية",
+    support: "الدعم"
+  },
+  en: {
+    dir: "ltr",
+    language: "English",
+    secureTitle: "Secure Access",
+    secureSubtitle:
+      "Please authenticate to access your safety dashboard and authorized operational modules.",
+    brandHeadline: "The Authoritative Safety Layer.",
+    brandBody:
+      "Managing environmental, health, and safety protocols with Swiss-grade precision and operational clarity.",
+    status: "All Protocols Secure",
+    username: "USERNAME / EMAIL",
+    usernamePlaceholder: "user@company.com",
+    password: "PASSWORD",
+    forgot: "Forgot Password?",
+    login: "Authenticate →",
+    authenticating: "Authenticating...",
+    with: "OR SECURE LOGIN WITH",
+    touchId: "Touch ID",
+    faceId: "Face ID",
+    notes: "SECURE ACCESS NOTES",
+    note1: "Real sign-in uses signInWithPassword.",
+    note2: "The backend loads or creates the user profile after login.",
+    note3: "Navigation and pages are loaded from the backend by role.",
+    warning: "Supabase environment variables are missing or incomplete.",
+    genericError: "Unable to sign in",
+    resetTitle: "Forgot Password",
+    resetBody: "Enter your email and we will send you a reset link using Supabase Auth.",
+    resetHint: "Enter your email to receive a password reset link.",
+    sendReset: "Send Reset Link",
+    sendingReset: "Sending...",
+    resetSent: "Password reset link sent successfully to your email.",
+    backToLogin: "Back to login",
+    safetyManual: "SAFETY MANUAL",
+    privacy: "PRIVACY",
+    support: "SUPPORT"
+  }
+} as const;
 
 function getRoleSummary(role: UserRole) {
   switch (role) {
@@ -68,6 +144,8 @@ function LoginPage({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [locale, setLocale] = useState<AuthLocale>("ar");
+  const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState<LoginState>({
     email: "",
     password: "",
@@ -76,15 +154,13 @@ function LoginPage({
   });
 
   const destination = (location.state as { from?: string } | undefined)?.from || "/app";
+  const copy = loginCopy[locale];
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!supabase) {
-      setState((current) => ({
-        ...current,
-        error: "إعدادات Supabase غير مكتملة داخل متغيرات البيئة."
-      }));
+      setState((current) => ({ ...current, error: copy.warning }));
       return;
     }
 
@@ -97,7 +173,7 @@ function LoginPage({
       });
 
       if (error || !data.session?.access_token) {
-        throw error || new Error("تعذر إنشاء الجلسة");
+        throw error || new Error(copy.genericError);
       }
 
       const me = await fetchCurrentUser(data.session.access_token);
@@ -109,7 +185,7 @@ function LoginPage({
     } catch (error) {
       setState((current) => ({
         ...current,
-        error: error instanceof Error ? error.message : "تعذر تسجيل الدخول",
+        error: error instanceof Error ? error.message : copy.genericError,
         loading: false
       }));
       return;
@@ -119,90 +195,261 @@ function LoginPage({
   }
 
   return (
-    <div className="auth-shell">
+    <div className={`auth-shell ${locale === "en" ? "locale-en" : ""}`} dir={copy.dir}>
       <section className="login-panel">
-        <div className="login-copy">
-          <span className="eyebrow badge">EHS Control Center</span>
-          <h1>دخول حقيقي عبر Supabase ثم عرض الصفحات حسب الصلاحية</h1>
-          <p className="lead">
-            تم تحويل الواجهة لتعمل بتسجيل دخول فعلي عبر Supabase Auth، ثم تحميل
-            المستخدم والموديولات المسموحة من الـ backend بدلاً من الاعتماد على عرض ثابت.
-          </p>
-
-          <div className="callout-grid">
-            <article className="callout">
-              <strong>مصادقة حقيقية</strong>
-              <span>تسجيل الدخول يعتمد على جلسة Supabase الفعلية.</span>
-            </article>
-            <article className="callout">
-              <strong>صلاحيات من backend</strong>
-              <span>الصفحات والموديولات تُحمّل من الخادم بحسب دور المستخدم.</span>
-            </article>
-            <article className="callout">
-              <strong>جاهز للتوسع</strong>
-              <span>يمكن استبدال المؤشرات المرجعية ببيانات حية من الجداول الحالية.</span>
-            </article>
-          </div>
-        </div>
-
-        <div className="login-card">
-          <div className="login-card-head">
-            <h2>تسجيل الدخول</h2>
-            <p>
-              {isConfigured
-                ? "استخدم حساب Supabase المسجل داخل مشروعك."
-                : "أضف قيم Supabase إلى متغيرات البيئة قبل استخدام تسجيل الدخول."}
-            </p>
+        <aside className="login-brand-panel">
+          <div className="brand-top">
+            <div className="brand-title">Sentinel EHS</div>
+            <span className="brand-underline" />
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            <label>
-              البريد الإلكتروني
-              <input
-                value={state.email}
-                onChange={(event) =>
-                  setState((current) => ({ ...current, email: event.target.value }))
-                }
-                type="email"
-                placeholder="user@company.com"
-              />
-            </label>
+          <div className="brand-message">
+            <h1>{copy.brandHeadline}</h1>
+            <p>{copy.brandBody}</p>
+          </div>
 
-            <label>
-              كلمة المرور
-              <input
-                value={state.password}
-                onChange={(event) =>
-                  setState((current) => ({ ...current, password: event.target.value }))
-                }
-                type="password"
-                placeholder="••••••••"
-              />
-            </label>
+          <div className="status-panel">
+            <span className="status-label">SYSTEM STATUS</span>
+            <div className="status-row">
+              <span className="status-dot" />
+              <strong>{copy.status}</strong>
+            </div>
+          </div>
 
-            {state.error ? <p className="form-error">{state.error}</p> : null}
+          <div className="brand-footer">© 2026 Sentinel EHS Systems. All rights reserved.</div>
+        </aside>
 
-            <button className="button login-button" type="submit" disabled={state.loading}>
-              {state.loading ? "جاري التحقق..." : "دخول إلى النظام"}
-            </button>
-          </form>
+        <div className="login-form-panel">
+          <button
+            className="language-switch"
+            type="button"
+            onClick={() => setLocale((current) => (current === "ar" ? "en" : "ar"))}
+          >
+            🌐 {copy.language}
+          </button>
 
-          <div className="demo-box">
-            <h3>ملاحظات الربط</h3>
-            <div className="demo-list">
-              <div className="demo-item">
-                <strong>Supabase Auth</strong>
-                <span>تسجيل الدخول يتم عبر `signInWithPassword`.</span>
-              </div>
-              <div className="demo-item">
-                <strong>profiles</strong>
-                <span>الـ backend يحمّل أو ينشئ profile تلقائياً للمستخدم.</span>
-              </div>
-              <div className="demo-item">
-                <strong>Navigation</strong>
-                <span>القائمة والصفحات تُحمّل من `/api/navigation/screens`.</span>
+          <div className="login-card sleek-login-card">
+            <div className="login-card-head login-head-spaced">
+              <div>
+                <h2>{copy.secureTitle}</h2>
+                <p>{copy.secureSubtitle}</p>
               </div>
             </div>
+
+            <form className="login-form polished-login-form" onSubmit={handleSubmit}>
+              <label>
+                {copy.username}
+                <div className="input-shell">
+                  <span className="input-icon">👤</span>
+                  <input
+                    value={state.email}
+                    onChange={(event) =>
+                      setState((current) => ({ ...current, email: event.target.value }))
+                    }
+                    type="email"
+                    placeholder={copy.usernamePlaceholder}
+                  />
+                </div>
+              </label>
+
+              <div className="password-row-head">
+                <span>{copy.password}</span>
+                <Link className="forgot-link" to="/forgot-password">
+                  {copy.forgot}
+                </Link>
+              </div>
+
+              <label className="password-field">
+                <div className="input-shell">
+                  <span className="input-icon">🔒</span>
+                  <input
+                    value={state.password}
+                    onChange={(event) =>
+                      setState((current) => ({ ...current, password: event.target.value }))
+                    }
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                  />
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </label>
+
+              {state.error ? <p className="form-error">{state.error}</p> : null}
+              {!isConfigured ? <p className="form-warning">{copy.warning}</p> : null}
+
+              <button className="button login-button primary-auth-button" type="submit" disabled={state.loading}>
+                {state.loading ? copy.authenticating : copy.login}
+              </button>
+            </form>
+
+            <div className="login-divider">
+              <span>{copy.with}</span>
+            </div>
+
+            <div className="quick-auth-grid">
+              <button type="button" className="quick-auth-card">
+                <span className="quick-auth-icon">🆔</span>
+                <strong>{copy.touchId}</strong>
+              </button>
+              <button type="button" className="quick-auth-card">
+                <span className="quick-auth-icon">🛡️</span>
+                <strong>{copy.faceId}</strong>
+              </button>
+            </div>
+
+            <div className="login-info-card">
+              <div className="login-info-head">
+                <span className="shield-icon">🛡️</span>
+                <strong>{copy.notes}</strong>
+              </div>
+              <div className="demo-list integrated-notes">
+                <div className="demo-item">
+                  <strong>Supabase Auth</strong>
+                  <span>{copy.note1}</span>
+                </div>
+                <div className="demo-item">
+                  <strong>profiles</strong>
+                  <span>{copy.note2}</span>
+                </div>
+                <div className="demo-item">
+                  <strong>Navigation</strong>
+                  <span>{copy.note3}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="login-bottom-bar">
+              <span className="encryption-pill">🛡 AES-256 ENCRYPTED</span>
+              <div className="bottom-links">
+                <button type="button">{copy.safetyManual}</button>
+                <button type="button">{copy.privacy}</button>
+                <button type="button">{copy.support}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ForgotPasswordPage({ isConfigured }: { isConfigured: boolean }) {
+  const navigate = useNavigate();
+  const [locale, setLocale] = useState<AuthLocale>("ar");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const copy = loginCopy[locale];
+
+  async function handleReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!supabase) {
+      setError(copy.warning);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError(copy.resetHint);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const redirectTo = `${window.location.origin}/login`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo
+      });
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      setMessage(copy.resetSent);
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : copy.warning);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className={`auth-shell ${locale === "en" ? "locale-en" : ""}`} dir={copy.dir}>
+      <section className="login-panel forgot-layout">
+        <aside className="login-brand-panel">
+          <div className="brand-top">
+            <div className="brand-title">Sentinel EHS</div>
+            <span className="brand-underline" />
+          </div>
+
+          <div className="brand-message">
+            <h1>{copy.resetTitle}</h1>
+            <p>{copy.resetBody}</p>
+          </div>
+
+          <div className="status-panel">
+            <span className="status-label">SYSTEM STATUS</span>
+            <div className="status-row">
+              <span className="status-dot" />
+              <strong>{copy.status}</strong>
+            </div>
+          </div>
+
+          <div className="brand-footer">© 2026 Sentinel EHS Systems. All rights reserved.</div>
+        </aside>
+
+        <div className="login-form-panel">
+          <button
+            className="language-switch"
+            type="button"
+            onClick={() => setLocale((current) => (current === "ar" ? "en" : "ar"))}
+          >
+            🌐 {copy.language}
+          </button>
+
+          <div className="login-card sleek-login-card forgot-card">
+            <div className="login-card-head">
+              <h2>{copy.resetTitle}</h2>
+              <p>{copy.resetBody}</p>
+            </div>
+
+            <form className="login-form polished-login-form" onSubmit={handleReset}>
+              <label>
+                {copy.username}
+                <div className="input-shell">
+                  <span className="input-icon">✉️</span>
+                  <input
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    type="email"
+                    placeholder={copy.usernamePlaceholder}
+                  />
+                </div>
+              </label>
+
+              {error ? <p className="form-error">{error}</p> : null}
+              {message ? <p className="form-success">{message}</p> : null}
+              {!isConfigured ? <p className="form-warning">{copy.warning}</p> : null}
+
+              <button className="button login-button primary-auth-button" type="submit" disabled={loading}>
+                {loading ? copy.sendingReset : copy.sendReset}
+              </button>
+            </form>
+
+            <button className="ghost-back" type="button" onClick={() => navigate("/login")}>
+              {copy.backToLogin}
+            </button>
           </div>
         </div>
       </section>
@@ -574,6 +821,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage onLogin={setSession} isConfigured={Boolean(supabase)} />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage isConfigured={Boolean(supabase)} />} />
       <Route
         path="/app/*"
         element={
