@@ -73,6 +73,17 @@ export type PermitMetaPayload = {
   nextPermitNo: string;
 };
 
+export type WorkforceRow = {
+  id: string;
+  employee_no: string | null;
+  full_name: string;
+  employer_type: string;
+  department: string | null;
+  compliance_status: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
@@ -233,6 +244,28 @@ export async function updateRiskRegistryEntry(
 
 export async function listPermitsToWork(token: string) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow[] }>("/modules/permitsToWork", token);
+}
+
+export async function listWorkforceModule(token: string, moduleKey: "employees" | "contractors") {
+  return apiFetch<{ moduleKey: "employees" | "contractors"; data: WorkforceRow[] }>(
+    `/modules/${moduleKey}`,
+    token
+  );
+}
+
+export async function createWorkforceEntry(
+  token: string,
+  moduleKey: "employees" | "contractors",
+  payload: Partial<WorkforceRow> & Pick<WorkforceRow, "full_name">
+) {
+  return apiFetch<{ moduleKey: "employees" | "contractors"; data: WorkforceRow }>(
+    `/modules/${moduleKey}`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
 }
 
 export async function getPermitToWorkMeta(token: string) {

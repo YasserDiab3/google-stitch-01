@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   closePermitToWorkEntry,
+  createWorkforceEntry,
   createRiskRegistryEntry,
   createPermitToWorkEntry,
   decidePermitToWorkEntry,
@@ -14,13 +15,15 @@ import {
   listPermitNotifications,
   listRiskRegistry,
   listPermitsToWork,
+  listWorkforceModule,
   openPermitToWorkEntry,
   updateRiskRegistryEntry,
   type ApiUser,
   type PermitMetaPayload,
   type PermitNotificationRow,
   type PermitToWorkRow,
-  type RiskRegistryRow
+  type RiskRegistryRow,
+  type WorkforceRow
 } from "./lib/api";
 import { supabase } from "./lib/supabase";
 import { getModuleRoutes, roleLabels, type ModuleItem, type ModuleRoute, type StitchScreen, type UserRole } from "./data/screens";
@@ -65,6 +68,13 @@ type PermitFormState = {
   description: string;
   validFrom: string;
   validTo: string;
+};
+
+type WorkforceFormState = {
+  fullName: string;
+  employeeNo: string;
+  department: string;
+  complianceStatus: string;
 };
 
 const loginCopy = {
@@ -168,9 +178,6 @@ const loginCopy = {
     support: "SUPPORT"
   }
 } as const;
-
-const defaultLoginEmail = import.meta.env.VITE_DEFAULT_LOGIN_EMAIL;
-const defaultLoginPasswordHint = import.meta.env.VITE_DEFAULT_LOGIN_PASSWORD_HINT;
 
 function getRoleSummary(role: UserRole) {
   switch (role) {
@@ -362,25 +369,6 @@ function LoginPage({
                 {state.loading ? copy.authenticating : copy.login}
               </button>
             </form>
-
-            <div className="login-access-card">
-              <strong>{copy.accessTitle}</strong>
-              {defaultLoginEmail || defaultLoginPasswordHint ? (
-                <div className="access-list">
-                  <div className="access-item">
-                    <span>{copy.accessEmail}</span>
-                    <bdi>{defaultLoginEmail || copy.accessNone}</bdi>
-                  </div>
-                  <div className="access-item">
-                    <span>{copy.accessPassword}</span>
-                    <bdi>{defaultLoginPasswordHint || copy.accessPasswordFallback}</bdi>
-                  </div>
-                </div>
-              ) : (
-                <p className="access-copy">{copy.accessNone}</p>
-              )}
-              <p className="access-hint">{copy.accessHint}</p>
-            </div>
 
             <div className="login-divider">
               <span>{copy.with}</span>
@@ -1567,6 +1555,213 @@ function PermitsToWorkModulePage({
   );
 }
 
+function WorkforceModulePage({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const isContractors = moduleRoute.key === "contractors";
+  const [rows, setRows] = useState<WorkforceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<WorkforceFormState>({
+    fullName: "",
+    employeeNo: "",
+    department: "",
+    complianceStatus: ""
+  });
+
+  async function loadRows() {
+    try {
+      setLoading(true);
+      setError("");
+      const payload = await listWorkforceModule(accessToken, isContractors ? "contractors" : "employees");
+      setRows(payload.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل السجلات");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadRows();
+  }, [accessToken, isContractors]);
+
+  async function handleCreateRecord(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.fullName.trim()) {
+      setError("أدخل الاسم قبل الحفظ");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createWorkforceEntry(accessToken, isContractors ? "contractors" : "employees", {
+        full_name: form.fullName.trim(),
+        employee_no: form.employeeNo.trim() || null,
+        department: form.department.trim() || null,
+        compliance_status: form.complianceStatus.trim() || null
+      } as Partial<WorkforceRow> & Pick<WorkforceRow, "full_name">);
+
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        fullName: "",
+        employeeNo: "",
+        department: "",
+        complianceStatus: ""
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ السجل");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const compliantCount = rows.filter((row) =>
+    (row.compliance_status || "").toLowerCase().includes("compliant") ||
+    (row.compliance_status || "").includes("ممتثل")
+  ).length;
+
+  const reviewCount = rows.filter((row) =>
+    (row.compliance_status || "").toLowerCase().includes("expired") ||
+    (row.compliance_status || "").toLowerCase().includes("review") ||
+    (row.compliance_status || "").includes("منتهي") ||
+    (row.compliance_status || "").includes("مراجعة")
+  ).length;
+
+  const titlePrefix = isContractors ? "المقاولين" : "الموظفين";
+  const idLabel = isContractors ? "رقم المقاول" : "الرقم الوظيفي";
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card">
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card">
+            <strong>{rows.length}</strong>
+            <span>{`إجمالي ${titlePrefix}`}</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{compliantCount}</strong>
+            <span>ممتثلون</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{reviewCount}</strong>
+            <span>بحاجة لمراجعة</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{new Set(rows.map((row) => row.department || "غير محدد")).size}</strong>
+            <span>{isContractors ? "شركات / أقسام" : "أقسام"}</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card risk-form-card">
+          <div className="card-head">
+            <h3>{isContractors ? "إضافة مقاول" : "إضافة موظف"}</h3>
+          </div>
+
+          <form className="risk-form" onSubmit={handleCreateRecord}>
+            <label>
+              الاسم الكامل
+              <input
+                value={form.fullName}
+                onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                placeholder={isContractors ? "اسم الشركة أو المقاول" : "اسم الموظف"}
+              />
+            </label>
+            <label>
+              {idLabel}
+              <input
+                value={form.employeeNo}
+                onChange={(event) => setForm((current) => ({ ...current, employeeNo: event.target.value }))}
+                placeholder={isContractors ? "CTR-1002" : "EMP-1002"}
+              />
+            </label>
+            <label>
+              القسم
+              <input
+                value={form.department}
+                onChange={(event) => setForm((current) => ({ ...current, department: event.target.value }))}
+                placeholder={isContractors ? "المقاولات / المشروع" : "التشغيل / الصيانة"}
+              />
+            </label>
+            <label>
+              حالة الامتثال
+              <input
+                value={form.complianceStatus}
+                onChange={(event) => setForm((current) => ({ ...current, complianceStatus: event.target.value }))}
+                placeholder="Compliant"
+              />
+            </label>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ الحفظ..." : isContractors ? "حفظ المقاول" : "حفظ الموظف"}
+            </button>
+          </form>
+        </article>
+
+        <article className="preview-card risk-table-card">
+          <div className="card-head">
+            <h3>{isContractors ? "سجل المقاولين" : "سجل الموظفين"}</h3>
+            <span>{`${rows.length} سجل`}</span>
+          </div>
+
+          {error ? <div className="form-error">{error}</div> : null}
+          {loading ? <div className="empty-state">جارٍ تحميل السجلات...</div> : null}
+
+          {!loading ? (
+            <div className="risk-table">
+              <div className="risk-table-head workforce-table-head">
+                <span>الاسم</span>
+                <span>{idLabel}</span>
+                <span>القسم</span>
+                <span>النوع</span>
+                <span>الامتثال</span>
+              </div>
+              {rows.map((row) => (
+                <div className="risk-row workforce-row" key={row.id}>
+                  <strong>{row.full_name}</strong>
+                  <span>{row.employee_no || "-"}</span>
+                  <span>{row.department || "-"}</span>
+                  <span>{row.employer_type || "-"}</span>
+                  <span>{row.compliance_status || "-"}</span>
+                </div>
+              ))}
+              {!rows.length ? (
+                <div className="empty-state">
+                  {isContractors ? "لا توجد سجلات مقاولين بعد." : "لا توجد سجلات موظفين بعد."}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+    </div>
+  );
+}
+
 function ModulePage({
   user,
   moduleRoutes,
@@ -1599,6 +1794,10 @@ function ModulePage({
 
   if (moduleRoute.key === "permitsToWork") {
     return <PermitsToWorkModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+  }
+
+  if (moduleRoute.key === "employees" || moduleRoute.key === "contractors") {
+    return <WorkforceModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   return (

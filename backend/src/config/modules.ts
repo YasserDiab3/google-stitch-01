@@ -47,7 +47,12 @@ export const moduleCatalog = {
   },
   employees: {
     table: "employees_contractors",
-    title: "الموظفون والمقاولون",
+    title: "الموظفون",
+    allowedRoles: ["admin", "ehs_manager", "contractor_manager"]
+  },
+  contractors: {
+    table: "employees_contractors",
+    title: "إدارة المقاولين",
     allowedRoles: ["admin", "ehs_manager", "contractor_manager"]
   },
   chemicals: {
@@ -156,18 +161,35 @@ export const navigationScreens: NavigationScreen[] = [
   {
     screenId: "e187e67924e7410a830b6f1971a8c8ae",
     slug: "04-employee-contractor-database-web",
-    title: "الموظفون والمقاولون",
+    title: "\u0627\u0644\u0645\u0648\u0638\u0641\u0648\u0646",
     moduleKey: "employees",
     platform: "Web",
-    description: "قاعدة بيانات موحدة للموظفين والمقاولين والوثائق والانتهاء.",
+    description: "\u0642\u0627\u0639\u062f\u0629 \u0628\u064a\u0627\u0646\u0627\u062a \u0645\u0648\u062d\u062f\u0629 \u0644\u0644\u0645\u0648\u0638\u0641\u064a\u0646 \u0627\u0644\u062f\u0627\u062e\u0644\u064a\u064a\u0646 \u0648\u0627\u0644\u0648\u062b\u0627\u0626\u0642 \u0648\u0627\u0644\u0627\u0645\u062a\u062b\u0627\u0644",
     imagePath: "/stitch/04-employee-contractor-database-web/screen.png",
     htmlPath: "/stitch/04-employee-contractor-database-web/screen.html",
     accent: "#2563eb",
     allowedRoles: ["admin", "ehs_manager", "contractor_manager"],
     category: "People",
     kpis: [
-      { label: "إجمالي الأفراد", value: "412" },
+      { label: "\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0645\u0648\u0638\u0641\u064a\u0646", value: "412" },
       { label: "منتهي الامتثال", value: "36" }
+    ]
+  },
+  {
+    screenId: "e187e67924e7410a830b6f1971a8c8ae-contractors",
+    slug: "04-contractors-management-web",
+    title: "إدارة المقاولين",
+    moduleKey: "contractors",
+    platform: "Web",
+    description: "إدارة قائمة المقاولين والوثائق والامتثال وحالات العقود.",
+    imagePath: "/stitch/04-employee-contractor-database-web/screen.png",
+    htmlPath: "/stitch/04-employee-contractor-database-web/screen.html",
+    accent: "#0f766e",
+    allowedRoles: ["admin", "ehs_manager", "contractor_manager"],
+    category: "People",
+    kpis: [
+      { label: "إجمالي المقاولين", value: "128" },
+      { label: "عقود تحت المتابعة", value: "14" }
     ]
   },
   {
