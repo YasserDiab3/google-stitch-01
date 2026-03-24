@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   closePermitToWorkEntry,
+  createManagedUserEntry,
   createWorkforceEntry,
   createRiskRegistryEntry,
   createPermitToWorkEntry,
@@ -15,10 +16,13 @@ import {
   listPermitNotifications,
   listRiskRegistry,
   listPermitsToWork,
+  listManagedUsers,
   listWorkforceModule,
   openPermitToWorkEntry,
+  updateManagedUserEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type ManagedUserRow,
   type PermitMetaPayload,
   type PermitNotificationRow,
   type PermitToWorkRow,
@@ -75,6 +79,15 @@ type WorkforceFormState = {
   employeeNo: string;
   department: string;
   complianceStatus: string;
+};
+
+type ManagedUserFormState = {
+  fullName: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  department: string;
+  locale: string;
 };
 
 const loginCopy = {
@@ -1762,6 +1775,265 @@ function WorkforceModulePage({
   );
 }
 
+function UsersModulePage({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [rows, setRows] = useState<ManagedUserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<ManagedUserFormState>({
+    fullName: "",
+    email: "",
+    password: "",
+    role: "executive",
+    department: "",
+    locale: "ar"
+  });
+
+  const availableRoles: UserRole[] = [
+    "admin",
+    "ehs_manager",
+    "supervisor",
+    "clinic",
+    "contractor_manager",
+    "executive",
+    "permit_requester",
+    "permit_approver",
+    "area_manager",
+    "quality",
+    "safety"
+  ];
+
+  async function loadUsers() {
+    try {
+      setLoading(true);
+      setError("");
+      const payload = await listManagedUsers(accessToken);
+      setRows(payload.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "تعذر تحميل المستخدمين");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadUsers();
+  }, [accessToken]);
+
+  async function handleCreateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.fullName.trim() || !form.email.trim() || !form.password.trim()) {
+      setError("أدخل الاسم والبريد وكلمة المرور قبل الحفظ");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createManagedUserEntry(accessToken, {
+        full_name: form.fullName.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        role: form.role,
+        department: form.department.trim() || null,
+        locale: form.locale,
+        is_active: true
+      });
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        fullName: "",
+        email: "",
+        password: "",
+        role: "executive",
+        department: "",
+        locale: "ar"
+      });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء المستخدم");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleToggleUser(row: ManagedUserRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await updateManagedUserEntry(accessToken, row.id, {
+        is_active: !row.is_active
+      });
+      setRows((current) => current.map((item) => (item.id === row.id ? payload.data : item)));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "تعذر تحديث حالة المستخدم");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activeCount = rows.filter((row) => row.is_active).length;
+  const inactiveCount = rows.length - activeCount;
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card">
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card">
+            <strong>{rows.length}</strong>
+            <span>إجمالي المستخدمين</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{activeCount}</strong>
+            <span>نشطون</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{inactiveCount}</strong>
+            <span>غير نشطين</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{new Set(rows.map((row) => row.role)).size}</strong>
+            <span>أدوار فعالة</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card risk-form-card">
+          <div className="card-head">
+            <h3>إضافة مستخدم جديد</h3>
+          </div>
+          <form className="risk-form" onSubmit={handleCreateUser}>
+            <label>
+              الاسم الكامل
+              <input
+                value={form.fullName}
+                onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                placeholder="اسم المستخدم"
+              />
+            </label>
+            <label>
+              البريد الإلكتروني
+              <input
+                value={form.email}
+                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                type="email"
+                placeholder="user@company.com"
+              />
+            </label>
+            <label>
+              كلمة المرور المؤقتة
+              <input
+                value={form.password}
+                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                type="password"
+                placeholder="********"
+              />
+            </label>
+            <label>
+              الدور / الصلاحية
+              <select
+                value={form.role}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, role: event.target.value as UserRole }))
+                }
+              >
+                {availableRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {roleLabels[role]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              القسم
+              <input
+                value={form.department}
+                onChange={(event) => setForm((current) => ({ ...current, department: event.target.value }))}
+                placeholder="التشغيل / الجودة"
+              />
+            </label>
+            <label>
+              اللغة
+              <select
+                value={form.locale}
+                onChange={(event) => setForm((current) => ({ ...current, locale: event.target.value }))}
+              >
+                <option value="ar">العربية</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ إنشاء المستخدم..." : "حفظ المستخدم"}
+            </button>
+          </form>
+        </article>
+
+        <article className="preview-card risk-table-card">
+          <div className="card-head">
+            <h3>سجل المستخدمين</h3>
+            <span>{rows.length} مستخدم</span>
+          </div>
+
+          {error ? <div className="form-error">{error}</div> : null}
+          {loading ? <div className="empty-state">جارٍ تحميل المستخدمين...</div> : null}
+
+          {!loading ? (
+            <div className="risk-table">
+              <div className="risk-table-head users-table-head">
+                <span>الاسم</span>
+                <span>البريد</span>
+                <span>الدور</span>
+                <span>القسم</span>
+                <span>الحالة</span>
+                <span>إجراء</span>
+              </div>
+              {rows.map((row) => (
+                <div className="risk-row users-row" key={row.id}>
+                  <strong>{row.full_name || "-"}</strong>
+                  <span>{row.email || "-"}</span>
+                  <span>{roleLabels[row.role] || row.role}</span>
+                  <span>{row.department || "-"}</span>
+                  <span className={row.is_active ? "risk-status risk-status-approved" : "risk-status risk-status-rejected"}>
+                    {row.is_active ? "نشط" : "غير نشط"}
+                  </span>
+                  <div className="risk-actions">
+                    <button type="button" onClick={() => void handleToggleUser(row)}>
+                      {row.is_active ? "إيقاف" : "تفعيل"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {!rows.length ? <div className="empty-state">لا توجد حسابات مستخدمين بعد.</div> : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+    </div>
+  );
+}
+
 function ModulePage({
   user,
   moduleRoutes,
@@ -1798,6 +2070,10 @@ function ModulePage({
 
   if (moduleRoute.key === "employees" || moduleRoute.key === "contractors") {
     return <WorkforceModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+  }
+
+  if (moduleRoute.key === "users") {
+    return <UsersModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
   }
 
   return (

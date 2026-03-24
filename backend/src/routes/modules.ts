@@ -18,6 +18,11 @@ import {
   listPermitsToWorkRows,
   openPermitToWork
 } from "../services/permit-workflow.js";
+import {
+  createManagedUser,
+  listManagedUsers,
+  updateManagedUser
+} from "../services/user-management.js";
 
 export const modulesRouter = Router();
 
@@ -43,7 +48,11 @@ modulesRouter.get("/:moduleKey", async (request, response, next) => {
       return;
     }
     const data =
-      moduleKey === "permitsToWork" ? await listPermitsToWorkRows() : await listModuleRows(moduleKey);
+      moduleKey === "permitsToWork"
+        ? await listPermitsToWorkRows()
+        : moduleKey === "users"
+          ? await listManagedUsers()
+          : await listModuleRows(moduleKey);
     response.json({ moduleKey, data });
   } catch (error) {
     next(error);
@@ -91,6 +100,16 @@ modulesRouter.post("/:moduleKey", async (request, response, next) => {
     const data =
       moduleKey === "permitsToWork"
         ? await createPermitToWorkWorkflow(authRequest.authUser, request.body)
+        : moduleKey === "users"
+          ? await createManagedUser({
+              email: request.body?.email,
+              password: request.body?.password,
+              fullName: request.body?.full_name,
+              role: request.body?.role,
+              department: request.body?.department,
+              locale: request.body?.locale,
+              isActive: request.body?.is_active
+            })
         : await createModuleRow(moduleKey, request.body);
     response.status(201).json({ moduleKey, data });
   } catch (error) {
@@ -110,7 +129,16 @@ modulesRouter.patch("/:moduleKey/:id", async (request, response, next) => {
       response.status(405).json({ error: "Use workflow actions for permits to work" });
       return;
     }
-    const data = await updateModuleRow(moduleKey, request.params.id, request.body);
+    const data =
+      moduleKey === "users"
+        ? await updateManagedUser(request.params.id, {
+            fullName: request.body?.full_name,
+            role: request.body?.role,
+            department: request.body?.department,
+            locale: request.body?.locale,
+            isActive: request.body?.is_active
+          })
+        : await updateModuleRow(moduleKey, request.params.id, request.body);
     response.json({ moduleKey, data });
   } catch (error) {
     next(error);

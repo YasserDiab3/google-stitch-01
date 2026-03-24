@@ -84,6 +84,18 @@ export type WorkforceRow = {
   updated_at: string;
 };
 
+export type ManagedUserRow = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: UserRole;
+  department: string | null;
+  is_active: boolean;
+  locale: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
@@ -266,6 +278,39 @@ export async function createWorkforceEntry(
       body: JSON.stringify(payload)
     }
   );
+}
+
+export async function listManagedUsers(token: string) {
+  return apiFetch<{ moduleKey: "users"; data: ManagedUserRow[] }>("/modules/users", token);
+}
+
+export async function createManagedUserEntry(
+  token: string,
+  payload: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: UserRole;
+    department?: string | null;
+    locale?: string | null;
+    is_active?: boolean;
+  }
+) {
+  return apiFetch<{ moduleKey: "users"; data: ManagedUserRow }>("/modules/users", token, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateManagedUserEntry(
+  token: string,
+  id: string,
+  payload: Partial<ManagedUserRow>
+) {
+  return apiFetch<{ moduleKey: "users"; data: ManagedUserRow }>(`/modules/users/${id}`, token, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function getPermitToWorkMeta(token: string) {
