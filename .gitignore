@@ -9,6 +9,10 @@ coverage
 npm-debug.log*
 frontend/dist
 backend/dist
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+supabase/.temp/
 mcp-init.json
 mcp-request.json
 mcp-tools-list.json
