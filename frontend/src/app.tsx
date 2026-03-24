@@ -312,43 +312,22 @@ function LoginPage({
             </div>
 
             <div className="quick-auth-grid">
-              <button type="button" className="quick-auth-card">
+              <div className="quick-auth-card" aria-hidden="true">
                 <span className="quick-auth-icon">🆔</span>
                 <strong>{copy.touchId}</strong>
-              </button>
-              <button type="button" className="quick-auth-card">
+              </div>
+              <div className="quick-auth-card" aria-hidden="true">
                 <span className="quick-auth-icon">🛡️</span>
                 <strong>{copy.faceId}</strong>
-              </button>
-            </div>
-
-            <div className="login-info-card">
-              <div className="login-info-head">
-                <span className="shield-icon">🛡️</span>
-                <strong>{copy.notes}</strong>
-              </div>
-              <div className="demo-list integrated-notes">
-                <div className="demo-item">
-                  <strong>Supabase Auth</strong>
-                  <span>{copy.note1}</span>
-                </div>
-                <div className="demo-item">
-                  <strong>profiles</strong>
-                  <span>{copy.note2}</span>
-                </div>
-                <div className="demo-item">
-                  <strong>Navigation</strong>
-                  <span>{copy.note3}</span>
-                </div>
               </div>
             </div>
 
             <div className="login-bottom-bar">
               <span className="encryption-pill">🛡 AES-256 ENCRYPTED</span>
               <div className="bottom-links">
-                <button type="button">{copy.safetyManual}</button>
-                <button type="button">{copy.privacy}</button>
-                <button type="button">{copy.support}</button>
+                <span>{copy.safetyManual}</span>
+                <span>{copy.privacy}</span>
+                <span>{copy.support}</span>
               </div>
             </div>
           </div>

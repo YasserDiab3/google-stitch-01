@@ -1,6 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Inter:wght@500;600;700;800&display=swap");
+
 :root {
   color-scheme: light;
-  font-family: "IBM Plex Sans Arabic", "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: "Cairo", "Inter", "Segoe UI", sans-serif;
   background:
     radial-gradient(circle at top, rgba(13, 148, 136, 0.16), transparent 24%),
     radial-gradient(circle at 20% 10%, rgba(190, 24, 93, 0.1), transparent 22%),
@@ -21,6 +23,10 @@ body,
 body {
   margin: 0;
   min-width: 320px;
+  background: #f7f8fc;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .locale-en {
@@ -177,6 +183,19 @@ img {
   padding: 30px 40px 30px 54px;
   display: flex;
   align-items: stretch;
+  overflow: hidden;
+}
+
+.login-form-panel::after {
+  content: "";
+  position: absolute;
+  inset: auto -120px -180px auto;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(21, 96, 182, 0.08) 0%, rgba(21, 96, 182, 0.02) 42%, transparent 72%);
+  pointer-events: none;
 }
 
 .language-switch {
@@ -193,12 +212,13 @@ img {
   font-weight: 700;
   text-align: center;
   cursor: pointer;
+  z-index: 1;
 }
 
 .sleek-login-card {
-  max-width: 720px;
+  max-width: 690px;
   width: 100%;
-  margin: 78px auto 22px;
+  margin: 96px auto 28px;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -258,7 +278,9 @@ h2 {
 .login-card-head p {
   color: #6b7280;
   margin-bottom: 0;
-  max-width: 640px;
+  max-width: 620px;
+  font-size: 1.03rem;
+  line-height: 1.9;
 }
 
 .login-form {
@@ -270,7 +292,7 @@ h2 {
   display: grid;
   gap: 8px;
   color: #111827;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.06em;
 }
@@ -284,6 +306,8 @@ h2 {
   background: #f3f5fa;
   padding: 0 18px;
   border-radius: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .login-form input {
@@ -300,6 +324,7 @@ h2 {
   border-color: #165eb4;
   box-shadow: 0 0 0 4px rgba(22, 94, 180, 0.11);
   background: #ffffff;
+  transform: translateY(-1px);
 }
 
 .input-icon {
@@ -344,6 +369,10 @@ h2 {
 
 .form-warning {
   margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(190, 24, 93, 0.18);
+  background: rgba(255, 241, 242, 0.92);
   color: #be123c;
 }
 
@@ -427,32 +456,11 @@ h2 {
   gap: 12px;
   font-weight: 800;
   color: #1f2937;
-  cursor: pointer;
+  cursor: default;
 }
 
 .quick-auth-icon {
   font-size: 1.3rem;
-}
-
-.login-info-card {
-  padding: 18px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(238, 244, 255, 0.9), rgba(244, 248, 255, 0.82));
-  border: 1px solid rgba(22, 94, 180, 0.14);
-}
-
-.login-info-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  color: #0b4ea2;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.shield-icon {
-  font-size: 1.15rem;
 }
 
 .demo-box {
@@ -482,10 +490,6 @@ h2 {
 .demo-item span {
   color: #60766d;
   margin-top: 4px;
-}
-
-.integrated-notes .demo-item {
-  cursor: default;
 }
 
 .ghost-back {
@@ -522,12 +526,9 @@ h2 {
   gap: 20px;
 }
 
-.bottom-links button {
-  border: 0;
-  background: transparent;
+.bottom-links span {
   color: #6b7280;
   letter-spacing: 0.12em;
-  cursor: pointer;
 }
 
 .app-shell {
@@ -848,10 +849,14 @@ h2 {
     flex-direction: column;
     align-items: start;
   }
+
+  .login-brand-panel {
+    min-height: auto;
+    gap: 40px;
+  }
 }
 
 @media (max-width: 760px) {
-  .auth-shell,
   .app-shell {
     padding: 14px;
   }
@@ -859,6 +864,19 @@ h2 {
   .callout-grid,
   .module-kpis {
     grid-template-columns: 1fr;
+  }
+
+  .login-form-panel {
+    padding: 90px 20px 24px;
+  }
+
+  .language-switch {
+    top: 18px;
+    right: 20px;
+  }
+
+  .sleek-login-card {
+    margin-top: 0;
   }
 
   .login-copy,
