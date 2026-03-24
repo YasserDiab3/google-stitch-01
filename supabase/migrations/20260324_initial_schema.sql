@@ -10,11 +10,37 @@ begin
 end;
 $$;
 
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.profiles (id, email, full_name, role, locale, is_active)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', ''),
+    'executive',
+    'ar',
+    true
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  email text unique,
   full_name text,
+  phone text,
+  job_title text,
+  department text,
   role text not null default 'viewer',
   locale text not null default 'ar',
+  is_active boolean not null default true,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -117,6 +143,11 @@ create table if not exists public.monthly_ehs_reports (
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles
 for each row execute function public.set_updated_at();
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
 
 drop trigger if exists risk_registry_set_updated_at on public.risk_registry;
 create trigger risk_registry_set_updated_at before update on public.risk_registry

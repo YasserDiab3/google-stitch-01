@@ -9,6 +9,7 @@ import { notFoundHandler } from "./middleware/not-found.js";
 import { authRouter } from "./routes/auth.js";
 import { healthRouter } from "./routes/health.js";
 import { modulesRouter } from "./routes/modules.js";
+import { navigationRouter } from "./routes/navigation.js";
 
 const logger = pino({
   level: env.NODE_ENV === "production" ? "info" : "debug"
@@ -45,6 +46,7 @@ app.get("/", (_request, response) => {
 
 app.use("/api/health", healthRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/navigation", navigationRouter);
 app.use("/api/modules", modulesRouter);
 
 app.use(notFoundHandler);
