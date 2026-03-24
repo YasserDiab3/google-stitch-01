@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
-import { fetchAllowedModules, fetchAllowedScreens, fetchCurrentUser, type ApiUser } from "./lib/api";
+import {
+  createRiskRegistryEntry,
+  fetchAllowedModules,
+  fetchAllowedScreens,
+  fetchCurrentUser,
+  listRiskRegistry,
+  updateRiskRegistryEntry,
+  type ApiUser,
+  type RiskRegistryRow
+} from "./lib/api";
 import { supabase } from "./lib/supabase";
 import { getModuleRoutes, roleLabels, type ModuleItem, type ModuleRoute, type StitchScreen, type UserRole } from "./data/screens";
 
@@ -25,6 +34,16 @@ type LoginState = {
 type RecoveryState = "request" | "reset";
 
 type AuthLocale = "ar" | "en";
+
+type RiskTab = "all" | "open" | "high" | "closed";
+
+type RiskFormState = {
+  title: string;
+  category: string;
+  severity: number;
+  likelihood: number;
+  dueDate: string;
+};
 
 const loginCopy = {
   ar: {
@@ -758,12 +777,307 @@ function DashboardPage({
   );
 }
 
+function RiskRegistryModulePage({
+  accessToken,
+  moduleRoute,
+  user
+}: {
+  accessToken: string;
+  moduleRoute: ModuleRoute;
+  user: ApiUser;
+}) {
+  const [activeTab, setActiveTab] = useState<RiskTab>("all");
+  const [rows, setRows] = useState<RiskRegistryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState<RiskFormState>({
+    title: "",
+    category: "Operational",
+    severity: 3,
+    likelihood: 3,
+    dueDate: ""
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRisks() {
+      try {
+        setLoading(true);
+        setError("");
+        const payload = await listRiskRegistry(accessToken);
+        if (!active) {
+          return;
+        }
+        setRows(payload.data);
+      } catch (loadError) {
+        if (!active) {
+          return;
+        }
+        setError(loadError instanceof Error ? loadError.message : "تعذر تحميل سجل المخاطر");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadRisks();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  const filteredRows = rows.filter((row) => {
+    if (activeTab === "open") {
+      return row.status !== "closed";
+    }
+
+    if (activeTab === "high") {
+      return (row.severity || 0) >= 4 || (row.likelihood || 0) >= 4;
+    }
+
+    if (activeTab === "closed") {
+      return row.status === "closed";
+    }
+
+    return true;
+  });
+
+  const openCount = rows.filter((row) => row.status !== "closed").length;
+  const highCount = rows.filter((row) => (row.severity || 0) >= 4 || (row.likelihood || 0) >= 4).length;
+  const closedCount = rows.filter((row) => row.status === "closed").length;
+
+  async function handleCreateRisk(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!form.title.trim()) {
+      setError("أدخل عنوان الخطر أولاً");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await createRiskRegistryEntry(accessToken, {
+        title: form.title.trim(),
+        category: form.category.trim(),
+        severity: form.severity,
+        likelihood: form.likelihood,
+        status: "open",
+        due_date: form.dueDate || null,
+        owner_id: user.id
+      });
+
+      setRows((current) => [payload.data, ...current]);
+      setForm({
+        title: "",
+        category: "Operational",
+        severity: 3,
+        likelihood: 3,
+        dueDate: ""
+      });
+      setActiveTab("all");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء الخطر");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleStatusUpdate(row: RiskRegistryRow, status: string) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await updateRiskRegistryEntry(accessToken, row.id, { status });
+      setRows((current) =>
+        current.map((item) => (item.id === row.id ? payload.data : item))
+      );
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "تعذر تحديث حالة الخطر");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="content-stack">
+      <section className="detail-hero">
+        <div>
+          <p className="eyebrow">{moduleRoute.key}</p>
+          <h2>{moduleRoute.title}</h2>
+          <p>{moduleRoute.description}</p>
+        </div>
+        <div className="detail-pills">
+          <span>{moduleRoute.platform}</span>
+          <span>{moduleRoute.category}</span>
+          <span>{user.roleLabel || roleLabels[user.role]}</span>
+        </div>
+      </section>
+
+      <section className="risk-toolbar-card">
+        <div className="risk-tabs">
+          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>
+            كل المخاطر
+          </button>
+          <button className={activeTab === "open" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("open")}>
+            المفتوحة
+          </button>
+          <button className={activeTab === "high" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("high")}>
+            عالية الأولوية
+          </button>
+          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>
+            المغلقة
+          </button>
+        </div>
+
+        <div className="risk-summary-grid">
+          <article className="risk-summary-card">
+            <strong>{rows.length}</strong>
+            <span>إجمالي السجلات</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{openCount}</strong>
+            <span>مفتوحة</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{highCount}</strong>
+            <span>عالية الأولوية</span>
+          </article>
+          <article className="risk-summary-card">
+            <strong>{closedCount}</strong>
+            <span>مغلقة</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="risk-layout">
+        <article className="preview-card risk-form-card">
+          <div className="card-head">
+            <h3>تسجيل خطر جديد</h3>
+          </div>
+
+          <form className="risk-form" onSubmit={handleCreateRisk}>
+            <label>
+              عنوان الخطر
+              <input
+                value={form.title}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                placeholder="مثال: خطر انزلاق في منطقة التشغيل"
+              />
+            </label>
+            <label>
+              الفئة
+              <input
+                value={form.category}
+                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                placeholder="Operational"
+              />
+            </label>
+            <div className="risk-form-grid">
+              <label>
+                الشدة
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={form.severity}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, severity: Number(event.target.value) }))
+                  }
+                />
+              </label>
+              <label>
+                الاحتمالية
+                <input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={form.likelihood}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, likelihood: Number(event.target.value) }))
+                  }
+                />
+              </label>
+            </div>
+            <label>
+              تاريخ الاستحقاق
+              <input
+                type="date"
+                value={form.dueDate}
+                onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))}
+              />
+            </label>
+
+            <button className="button" type="submit" disabled={saving}>
+              {saving ? "جارٍ الحفظ..." : "إضافة إلى السجل"}
+            </button>
+          </form>
+        </article>
+
+        <article className="preview-card risk-table-card">
+          <div className="card-head">
+            <h3>سجل المخاطر</h3>
+            <span>{activeTab === "all" ? "عرض شامل" : "عرض مفلتر"}</span>
+          </div>
+
+          {error ? <div className="form-error">{error}</div> : null}
+          {loading ? <div className="empty-state">جارٍ تحميل سجل المخاطر...</div> : null}
+
+          {!loading ? (
+            <div className="risk-table">
+              <div className="risk-table-head">
+                <span>الخطر</span>
+                <span>الفئة</span>
+                <span>التقييم</span>
+                <span>الحالة</span>
+                <span>الاستحقاق</span>
+                <span>إجراء</span>
+              </div>
+              {filteredRows.map((row) => (
+                <div className="risk-row" key={row.id}>
+                  <strong>{row.title}</strong>
+                  <span>{row.category || "-"}</span>
+                  <span>{row.severity || 0} x {row.likelihood || 0}</span>
+                  <span className={`risk-status risk-status-${row.status}`}>{row.status}</span>
+                  <span>{row.due_date || "-"}</span>
+                  <div className="risk-actions">
+                    {row.status !== "closed" ? (
+                      <button type="button" onClick={() => void handleStatusUpdate(row, "closed")}>
+                        إغلاق
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => void handleStatusUpdate(row, "open")}>
+                        إعادة فتح
+                      </button>
+                    )}
+                    {row.status === "open" ? (
+                      <button type="button" onClick={() => void handleStatusUpdate(row, "mitigating")}>
+                        قيد المعالجة
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+              {!filteredRows.length ? <div className="empty-state">لا توجد سجلات مطابقة لهذا التبويب.</div> : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+    </div>
+  );
+}
+
 function ModulePage({
   user,
-  moduleRoutes
+  moduleRoutes,
+  accessToken
 }: {
   user: ApiUser;
   moduleRoutes: ModuleRoute[];
+  accessToken: string;
 }) {
   const { slug } = useParams();
   const moduleRoute = moduleRoutes.find((item) => item.slug === slug);
@@ -781,6 +1095,10 @@ function ModulePage({
   }
 
   const screen = moduleRoute.primaryScreen;
+
+  if (moduleRoute.key === "riskRegistry") {
+    return <RiskRegistryModulePage accessToken={accessToken} moduleRoute={moduleRoute} user={user} />;
+  }
 
   return (
     <div className="content-stack">
@@ -971,7 +1289,7 @@ function AppShell({
             <Route path="/" element={<DashboardPage user={session.user} moduleRoutes={moduleRoutes} />} />
             <Route
               path="/modules/:slug"
-              element={<ModulePage user={session.user} moduleRoutes={moduleRoutes} />}
+              element={<ModulePage user={session.user} moduleRoutes={moduleRoutes} accessToken={session.accessToken} />}
             />
           </Routes>
         ) : null}

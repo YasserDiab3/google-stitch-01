@@ -14,14 +14,31 @@ export type ApiUser = {
   roleLabel?: string;
 };
 
-async function apiFetch<T>(path: string, token: string): Promise<T> {
+export type RiskRegistryRow = {
+  id: string;
+  title: string;
+  category: string | null;
+  severity: number | null;
+  likelihood: number | null;
+  status: string;
+  owner_id: string | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   if (backendIsPlaceholder) {
     throw new Error("Backend unavailable");
   }
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...init,
     headers: {
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`
+      ,
+      ...(init?.headers || {})
     }
   });
 
@@ -114,4 +131,37 @@ export async function fetchAllowedModules(token: string) {
       modules: getAllowedModules(user.role)
     };
   }
+}
+
+export async function listRiskRegistry(token: string) {
+  return apiFetch<{ moduleKey: "riskRegistry"; data: RiskRegistryRow[] }>("/modules/riskRegistry", token);
+}
+
+export async function createRiskRegistryEntry(
+  token: string,
+  payload: Partial<RiskRegistryRow> & Pick<RiskRegistryRow, "title">
+) {
+  return apiFetch<{ moduleKey: "riskRegistry"; data: RiskRegistryRow }>(
+    "/modules/riskRegistry",
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+export async function updateRiskRegistryEntry(
+  token: string,
+  id: string,
+  payload: Partial<RiskRegistryRow>
+) {
+  return apiFetch<{ moduleKey: "riskRegistry"; data: RiskRegistryRow }>(
+    `/modules/riskRegistry/${id}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }
+  );
 }

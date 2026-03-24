@@ -893,6 +893,168 @@ h2 {
   background: #fff;
 }
 
+.risk-toolbar-card,
+.risk-form-card,
+.risk-table-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(20, 38, 31, 0.08);
+  border-radius: 30px;
+  box-shadow: 0 24px 80px rgba(20, 38, 31, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.risk-toolbar-card,
+.risk-form-card,
+.risk-table-card {
+  padding: 24px;
+}
+
+.risk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.risk-tab {
+  border: 1px solid rgba(20, 38, 31, 0.08);
+  background: #f6faf9;
+  color: #315548;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.risk-tab.active {
+  background: #103f73;
+  color: #fff;
+}
+
+.risk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.risk-summary-card {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 20px;
+  background: #f8fbfa;
+  border: 1px solid rgba(20, 38, 31, 0.06);
+}
+
+.risk-summary-card strong {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.risk-summary-card span {
+  color: #60766d;
+}
+
+.risk-layout {
+  display: grid;
+  grid-template-columns: 0.42fr 1fr;
+  gap: 20px;
+}
+
+.risk-form {
+  display: grid;
+  gap: 14px;
+}
+
+.risk-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+  color: #19332a;
+}
+
+.risk-form input {
+  min-height: 50px;
+  border-radius: 14px;
+  border: 1px solid #d7dce7;
+  background: #f7f9fc;
+  padding: 0 14px;
+}
+
+.risk-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.risk-table {
+  display: grid;
+  gap: 12px;
+}
+
+.risk-table-head,
+.risk-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 0.9fr 1fr 1fr 1.4fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.risk-table-head {
+  padding: 0 8px 8px;
+  color: #6a7f76;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.risk-row {
+  padding: 16px;
+  border-radius: 20px;
+  background: #fbfcfe;
+  border: 1px solid rgba(20, 38, 31, 0.06);
+}
+
+.risk-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.risk-status-open {
+  background: rgba(234, 179, 8, 0.18);
+  color: #9a6700;
+}
+
+.risk-status-closed {
+  background: rgba(22, 163, 74, 0.14);
+  color: #166534;
+}
+
+.risk-status-mitigating {
+  background: rgba(37, 99, 235, 0.14);
+  color: #1d4ed8;
+}
+
+.risk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.risk-actions button {
+  border: 1px solid rgba(16, 63, 115, 0.14);
+  background: #fff;
+  color: #103f73;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .variant-strip {
   display: grid;
   gap: 14px;
@@ -930,7 +1092,9 @@ h2 {
   .app-shell,
   .login-panel,
   .overview-grid,
-  .preview-layout {
+  .preview-layout,
+  .risk-layout,
+  .risk-summary-grid {
     grid-template-columns: 1fr;
   }
 
@@ -958,7 +1122,10 @@ h2 {
   }
 
   .callout-grid,
-  .module-kpis {
+  .module-kpis,
+  .risk-form-grid,
+  .risk-table-head,
+  .risk-row {
     grid-template-columns: 1fr;
   }
 
