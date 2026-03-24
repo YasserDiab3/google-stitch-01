@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>سجل المخاطر | Sentinel Safety</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-fixed-variant": "#930010",
+                        "on-secondary-fixed": "#002204",
+                        "outline-variant": "#c2c6d4",
+                        "tertiary": "#940010",
+                        "primary": "#00478d",
+                        "surface-dim": "#d9dadd",
+                        "secondary-fixed": "#a3f69c",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "on-tertiary-container": "#ffceca",
+                        "surface-container-high": "#e7e8eb",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#191c1e",
+                        "surface-container-highest": "#e2e2e6",
+                        "on-surface-variant": "#424752",
+                        "surface-tint": "#005db6",
+                        "inverse-on-surface": "#f0f0f4",
+                        "on-primary-container": "#c8daff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#a9c7ff",
+                        "secondary": "#1b6d24",
+                        "primary-container": "#005eb8",
+                        "on-tertiary-fixed": "#410003",
+                        "surface-container-low": "#f3f3f7",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "tertiary-fixed": "#ffdad6",
+                        "primary-fixed": "#d6e3ff",
+                        "on-secondary-container": "#217128",
+                        "inverse-surface": "#2e3133",
+                        "tertiary-container": "#bb1b21",
+                        "outline": "#727783",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#f9f9fd",
+                        "surface": "#f9f9fd",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#005312",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#edeef1",
+                        "background": "#f9f9fd",
+                        "secondary-container": "#a0f399",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e2e2e6",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Public Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+        [dir="rtl"] .sidebar-icon {
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- Top Navigation Anchor -->
+<header class="bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-6 py-3 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-blue-900 dark:text-blue-100 font-headline">Sentinel Safety</span>
+<nav class="hidden md:flex items-center gap-6 font-headline font-semibold tracking-tight text-blue-900 dark:text-blue-400">
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors" href="#">Dashboard</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors" href="#">Incidents</a>
+<a class="text-blue-900 dark:text-blue-400 border-b-2 border-blue-900 dark:border-blue-400 pb-1" href="#">Risk Registry</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors" href="#">Inspections</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<!-- Language Switcher -->
+<div class="flex bg-surface-container rounded-lg p-1 border border-outline-variant/30">
+<button class="px-3 py-1 text-xs font-bold rounded-md transition-all bg-primary text-white" id="lang-ar">AR</button>
+<button class="px-3 py-1 text-xs font-bold rounded-md transition-all text-on-surface-variant hover:bg-surface" id="lang-en">EN</button>
+</div>
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pr-10 pl-4 py-2 bg-surface-container rounded-lg border-none focus:ring-2 focus:ring-primary w-64 text-sm" placeholder="البحث في المخاطر..." type="text"/>
+</div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all rounded-full">
+<span class="material-symbols-outlined text-blue-900 dark:text-blue-400">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary-fixed flex items-center justify-center text-xs font-bold text-on-primary-fixed">JD</div>
+</div>
+</div>
+<div class="bg-slate-200/50 dark:bg-slate-800/50 h-[1px]"></div>
+</header>
+<div class="flex">
+<!-- Side Navigation Anchor -->
+<aside class="hidden lg:flex flex-col fixed right-0 top-0 h-full z-40 py-6 h-screen w-64 border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+<div class="px-6 mb-8 mt-16">
+<h2 class="text-lg font-black text-blue-900 dark:text-blue-50 font-headline">سجل المخاطر</h2>
+<p class="text-xs text-slate-500 font-medium">Risk Management v4.2</p>
+</div>
+<div class="space-y-1 px-3">
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer active:opacity-80 hover:-translate-x-1 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-sm font-medium">لوحة القيادة</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer active:opacity-80 hover:-translate-x-1 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-['Inter'] text-sm font-medium">الحوادث</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-300 font-bold rounded-lg cursor-pointer active:opacity-80 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-['Inter'] text-sm font-medium">سجل المخاطر</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer active:opacity-80 hover:-translate-x-1 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-['Inter'] text-sm font-medium">عمليات التفتيش</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer active:opacity-80 hover:-translate-x-1 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+<span class="font-['Inter'] text-sm font-medium">الامتثال</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:mr-64 w-full min-h-screen pb-20 p-6 md:p-8 bg-surface">
+<!-- Header Section -->
+<section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl font-headline font-black tracking-tight text-on-surface mb-2">سجل المخاطر المؤسسية</h1>
+<p class="text-on-surface-variant max-w-2xl leading-relaxed">نظام مراقبة وتحليل المخاطر لضمان أعلى معايير السلامة المهنية والامتثال البيئي.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-5 py-3 bg-surface-container-highest text-on-surface font-semibold rounded-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="file_export">file_export</span>
+                        تصدير السجل
+                    </button>
+<button class="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-white font-bold rounded-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+                        تسجيل خطر جديد
+                    </button>
+</div>
+</section>
+<!-- Risk Summary Tiles (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+<div class="bg-surface-container-low p-6 rounded-xl border-r-4 border-primary">
+<span class="text-label-md text-on-surface-variant font-medium block mb-1">إجمالي المخاطر النشطة</span>
+<div class="flex items-baseline justify-between">
+<span class="text-4xl font-black font-headline text-on-surface">142</span>
+<span class="text-primary text-xs font-bold">+5 هذا الشهر</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-r-4 border-error">
+<span class="text-label-md text-on-surface-variant font-medium block mb-1">مخاطر عالية الأولوية</span>
+<div class="flex items-baseline justify-between">
+<span class="text-4xl font-black font-headline text-error">08</span>
+<span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-[10px] font-bold">عاجل</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-r-4 border-amber-500">
+<span class="text-label-md text-on-surface-variant font-medium block mb-1">إجراءات قيد التنفيذ</span>
+<div class="flex items-baseline justify-between">
+<span class="text-4xl font-black font-headline text-on-surface">34</span>
+<span class="text-on-surface-variant text-xs">24% من الإجمالي</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-r-4 border-secondary">
+<span class="text-label-md text-on-surface-variant font-medium block mb-1">المخاطر التي تم حلها</span>
+<div class="flex items-baseline justify-between">
+<span class="text-4xl font-black font-headline text-secondary">89</span>
+<span class="text-secondary text-xs font-bold">معدل نجاح 92%</span>
+</div>
+</div>
+</section>
+<!-- Matrix and Critical Controls (Asymmetric Layout) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+<!-- Risk Matrix -->
+<div class="lg:col-span-7 bg-surface-container-low p-8 rounded-xl">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-headline font-bold">مصفوفة المخاطر (5x5)</h3>
+<div class="flex gap-4 text-xs">
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-error"></span> مرتفع جداً</span>
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> متوسط</span>
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-secondary"></span> منخفض</span>
+</div>
+</div>
+<div class="flex gap-4">
+<!-- Y-Axis Label -->
+<div class="flex flex-col justify-between py-12 items-center text-xs font-bold text-on-surface-variant">
+<span class="rotate-180 [writing-mode:vertical-lr]">الاحتمالية (Likelihood)</span>
+</div>
+<div class="flex-1">
+<div class="risk-grid aspect-square">
+<!-- Row 5 -->
+<div class="bg-amber-100/50 rounded-sm"></div><div class="bg-amber-200/50 rounded-sm"></div><div class="bg-orange-200/50 rounded-sm"></div><div class="bg-error-container rounded-sm"></div><div class="bg-error rounded-sm flex items-center justify-center"><div class="w-6 h-6 rounded-full bg-white/20 border-2 border-white animate-pulse"></div></div>
+<!-- Row 4 -->
+<div class="bg-green-100/50 rounded-sm"></div><div class="bg-amber-100/50 rounded-sm"></div><div class="bg-amber-200/50 rounded-sm"></div><div class="bg-orange-200/50 rounded-sm flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-on-background/20 border border-on-background"></div></div><div class="bg-error-container rounded-sm"></div>
+<!-- Row 3 -->
+<div class="bg-green-100/50 rounded-sm flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-on-background/20 border border-on-background"></div></div><div class="bg-green-100/50 rounded-sm"></div><div class="bg-amber-100/50 rounded-sm flex items-center justify-center"><div class="w-5 h-5 rounded-full bg-white/30 border-2 border-white"></div></div><div class="bg-amber-200/50 rounded-sm"></div><div class="bg-orange-200/50 rounded-sm"></div>
+<!-- Row 2 -->
+<div class="bg-green-50/50 rounded-sm"></div><div class="bg-green-100/50 rounded-sm"></div><div class="bg-green-100/50 rounded-sm"></div><div class="bg-amber-100/50 rounded-sm"></div><div class="bg-amber-200/50 rounded-sm"></div>
+<!-- Row 1 -->
+<div class="bg-green-50/50 rounded-sm"></div><div class="bg-green-50/50 rounded-sm"></div><div class="bg-green-100/50 rounded-sm"></div><div class="bg-green-100/50 rounded-sm"></div><div class="bg-amber-100/50 rounded-sm"></div>
+</div>
+<!-- X-Axis Label -->
+<div class="mt-4 flex justify-between px-2 text-xs font-bold text-on-surface-variant">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+</div>
+<div class="text-center mt-2 text-xs font-bold text-on-surface-variant uppercase tracking-widest">الشدة (Severity)</div>
+</div>
+</div>
+</div>
+<!-- Mitigation Controls -->
+<div class="lg:col-span-5 flex flex-col gap-6">
+<div class="bg-surface-container-low p-6 rounded-xl flex-1">
+<h3 class="text-lg font-headline font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="verified">verified</span>
+                            خطط التحكم النشطة
+                        </h3>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-bold">معدات الوقاية (PPE) - المرحلة 2</span>
+<span class="text-[10px] font-bold bg-secondary/10 text-secondary px-2 py-0.5 rounded">مكتمل بنسبة 80%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[80%]"></div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-bold">تحديث نظام التهوية الكيميائية</span>
+<span class="text-[10px] font-bold bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded">قيد المراجعة</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-amber-500 h-full w-[45%]"></div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-bold">برنامج التدريب على الارتفاعات</span>
+<span class="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded">مجدول</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[10%]"></div>
+</div>
+</div>
+</div>
+<button class="mt-6 w-full py-3 text-sm font-bold text-primary hover:bg-primary/5 transition-colors rounded-lg">عرض جميع الخطط</button>
+</div>
+<div class="bg-tertiary-container text-on-tertiary-container p-6 rounded-xl relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="font-headline font-bold text-lg mb-2">تنبيه خطر حرج</h4>
+<p class="text-sm opacity-90 mb-4">تم رصد ارتفاع في انبعاثات الوحدة "ج" - تتطلب تدخلاً فورياً خلال 24 ساعة.</p>
+<button class="px-4 py-2 bg-white text-tertiary font-bold text-xs rounded uppercase tracking-wider">بدء إجراء طوارئ</button>
+</div>
+<!-- Hazard Stripes Pattern Background -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background: repeating-linear-gradient(45deg, #000, #000 20px, transparent 20px, transparent 40px);"></div>
+</div>
+</div>
+</section>
+<!-- Risk Registry Table -->
+<section class="bg-surface-container-low rounded-xl overflow-hidden">
+<div class="p-6 flex justify-between items-center border-b border-outline-variant/10">
+<h3 class="text-xl font-headline font-bold">قائمة سجل المخاطر التفصيلية</h3>
+<div class="flex gap-2">
+<button class="p-2 bg-surface hover:bg-surface-container-high rounded"><span class="material-symbols-outlined text-sm">filter_list</span></button>
+<button class="p-2 bg-surface hover:bg-surface-container-high rounded"><span class="material-symbols-outlined text-sm">sort</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-right">
+<thead>
+<tr class="bg-surface-container-high text-on-surface-variant text-xs font-bold uppercase tracking-wider">
+<th class="px-6 py-4">معرف الخطر</th>
+<th class="px-6 py-4">وصف الخطر</th>
+<th class="px-6 py-4">الفئة</th>
+<th class="px-6 py-4">الاحتمالية</th>
+<th class="px-6 py-4">الشدة</th>
+<th class="px-6 py-4">المستوى</th>
+<th class="px-6 py-4">مسؤول التخفيف</th>
+<th class="px-6 py-4">الحالة</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10 text-sm">
+<tr class="bg-surface-container-lowest hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-bold text-primary">RSK-2024-001</td>
+<td class="px-6 py-4">تسرب غاز الأمونيا في وحدة التبريد المركزية</td>
+<td class="px-6 py-4">كيميائي</td>
+<td class="px-6 py-4">2 (منخفض)</td>
+<td class="px-6 py-4">5 (كارثي)</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-error-container text-on-error-container">عالي جداً</span>
+</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200" data-alt="Safety engineer profile" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC4n-6Op1X_62oJ-5kmQuNvCJwDWDdQGimSh2nNpl2iIVAhQjp1C4z5wqDcI1DnGiWMAT6kEI8FC_XdA1zV1RJq92khUcbagYzVyZgcFn-DSMuwMO-NQxqzR1Wec83KpaYNSkOpqj888V1tJFYiseq4517XfE1hArGgjg9Nh8sWNjiNJcNzsqPaWym-NIGmac6lqVjCqeVSSvezqUArYtng5xelveKSMsmZ52_Vf3qOJtJxeuNs6xN2lTo8G9aWM3wBc-bNma9FpJH6')"></div>
+                                    أحمد خالد
+                                </td>
+<td class="px-6 py-4">
+<span class="text-amber-600 font-bold">قيد التنفيذ</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-bold text-primary">RSK-2024-004</td>
+<td class="px-6 py-4">تعطل نظام الإيقاف التلقائي للمصاعد</td>
+<td class="px-6 py-4">ميكانيكي</td>
+<td class="px-6 py-4">3 (متوسط)</td>
+<td class="px-6 py-4">4 (شديد)</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">مرتفع</span>
+</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200" data-alt="Technician profile photo" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDom467AU2IqsfhTkxiskxu37JUwqv4xm1bEy10KpnTjwiNdXwno4c2l1g7zj8bNKreiUWPcJhL9JHEqXII94pP5E6d5VR4lzag_EdVB0cPTk6UfpyU0igDNYZbful6u6bI5ug_na0DfUbNTa0hUy8buXUxq674_j9IWZoPbQGAeCCpAsdU30wb1HFQe3K4XV8FYf0YxNY0n4UBYoGgFoxnxg9PK1Uid87uzM-DAIfcNzIKhURPh0QtwSjVwjMc1MOWKSRltP3-8yAF')"></div>
+                                    سارة علي
+                                </td>
+<td class="px-6 py-4">
+<span class="text-primary font-bold">مجدول</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4 font-bold text-primary">RSK-2024-009</td>
+<td class="px-6 py-4">تراكم النفايات الورقية في الممرات الخلفية</td>
+<td class="px-6 py-4">بيئي / حريق</td>
+<td class="px-6 py-4">4 (مرتفع)</td>
+<td class="px-6 py-4">2 (هامشي)</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">متوسط</span>
+</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold">محمد</div>
+                                    محمد فهد
+                                </td>
+<td class="px-6 py-4">
+<span class="text-secondary font-bold">مكتمل</span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-bright transition-colors border-r-4 border-error">
+<td class="px-6 py-4 font-bold text-primary">RSK-2024-012</td>
+<td class="px-6 py-4">أسلاك كهربائية مكشوفة في عنبر الإنتاج رقم 3</td>
+<td class="px-6 py-4">كهربائي</td>
+<td class="px-6 py-4">5 (متكرر)</td>
+<td class="px-6 py-4">4 (شديد)</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-error text-white">حرج</span>
+</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200" data-alt="Electrician profile" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB7PskPPv6uLwyI1XBs6NyShNP_5DI2PmLikA8EOMQTCkWzPETwcGAVTcXAZz1ummmyGprQZcTz5UjkfPhx3XlxDUPnrdPEZax9jhD6LYIxuPnxa7wS3byF1aMtVd8gFEbEkwkRMcHaOquTD3t856iYef7rR-HArr-_wrMgLmDENxl1IDpd-Kxs6lEWdvGAl5_Xbs7z0Kg2PDCP6NfAOE-BuKBtcST4M_u5OUqwdWstufQWhurf-hJgoDTEdw9tDQGrc_Wk2rbUvj1P')"></div>
+                                    خالد عمر
+                                </td>
+<td class="px-6 py-4">
+<span class="text-error font-bold">متأخر</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 bg-surface-container-high/30 flex justify-between items-center text-xs text-on-surface-variant font-medium">
+<span>عرض 4 من أصل 142 مخاطرة مسجلة</span>
+<div class="flex gap-1">
+<button class="px-3 py-1 bg-surface-container-lowest rounded border border-outline-variant/20 hover:bg-surface">1</button>
+<button class="px-3 py-1 hover:bg-surface rounded">2</button>
+<button class="px-3 py-1 hover:bg-surface rounded">3</button>
+<span class="px-2">...</span>
+<button class="px-3 py-1 hover:bg-surface rounded">15</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<script>
+        const btnAr = document.getElementById('lang-ar');
+        const btnEn = document.getElementById('lang-en');
+        const html = document.documentElement;
+
+        const translations = {
+            ar: {
+                title: "سجل المخاطر | Sentinel Safety",
+                dashboard: "لوحة القيادة",
+                incidents: "الحوادث",
+                riskRegistry: "سجل المخاطر",
+                inspections: "عمليات التفتيش",
+                compliance: "الامتثال",
+                searchPlaceholder: "البحث في المخاطر...",
+                mainTitle: "سجل المخاطر المؤسسية",
+                mainDesc: "نظام مراقبة وتحليل المخاطر لضمان أعلى معايير السلامة المهنية والامتثال البيئي.",
+                exportBtn: "تصدير السجل",
+                addBtn: "تسجيل خطر جديد",
+                totalRisks: "إجمالي المخاطر النشطة",
+                highPriority: "مخاطر عالية الأولوية",
+                inProgress: "إجراءات قيد التنفيذ",
+                resolved: "المخاطر التي تم حلها",
+                matrixTitle: "مصفوفة المخاطر (5x5)",
+                likelihood: "الاحتمالية",
+                severity: "الشدة",
+                plansTitle: "خطط التحكم النشطة",
+                emergencyAlert: "تنبيه خطر حرج",
+                emergencyDesc: "تم رصد ارتفاع في انبعاثات الوحدة \"ج\" - تتطلب تدخلاً فورياً خلال 24 ساعة.",
+                emergencyBtn: "بدء إجراء طوارئ",
+                tableTitle: "قائمة سجل المخاطر التفصيلية",
+                colId: "معرف الخطر",
+                colDesc: "وصف الخطر",
+                colCat: "الفئة",
+                colLik: "الاحتمالية",
+                colSev: "الشدة",
+                colLvl: "المستوى",
+                colOwner: "مسؤول التخفيف",
+                colStatus: "الحالة",
+                viewAll: "عرض جميع الخطط"
+            },
+            en: {
+                title: "Risk Registry | Sentinel Safety",
+                dashboard: "Dashboard",
+                incidents: "Incidents",
+                riskRegistry: "Risk Registry",
+                inspections: "Inspections",
+                compliance: "Compliance",
+                searchPlaceholder: "Search risks...",
+                mainTitle: "Enterprise Risk Registry",
+                mainDesc: "Risk monitoring and analysis system to ensure top occupational safety and environmental compliance standards.",
+                exportBtn: "Export Registry",
+                addBtn: "Register New Risk",
+                totalRisks: "Total Active Risks",
+                highPriority: "High Priority Risks",
+                inProgress: "Actions In Progress",
+                resolved: "Resolved Risks",
+                matrixTitle: "Risk Matrix (5x5)",
+                likelihood: "Likelihood",
+                severity: "Severity",
+                plansTitle: "Active Mitigation Plans",
+                emergencyAlert: "Critical Hazard Alert",
+                emergencyDesc: "Spike in Unit C emissions detected - requires immediate intervention within 24 hours.",
+                emergencyBtn: "Initiate Emergency Protocol",
+                tableTitle: "Detailed Risk Registry List",
+                colId: "Risk ID",
+                colDesc: "Hazard Description",
+                colCat: "Category",
+                colLik: "Likelihood",
+                colSev: "Severity",
+                colLvl: "Level",
+                colOwner: "Mitigation Owner",
+                colStatus: "Status",
+                viewAll: "View All Plans"
+            }
+        };
+
+        function setLanguage(lang) {
+            const dir = lang === 'ar' ? 'rtl' : 'ltr';
+            html.setAttribute('dir', dir);
+            html.setAttribute('lang', lang);
+
+            // Update classes for layout switch
+            const main = document.querySelector('main');
+            const aside = document.querySelector('aside');
+            
+            if (lang === 'en') {
+                main.classList.remove('lg:mr-64');
+                main.classList.add('lg:ml-64');
+                aside.classList.remove('right-0', 'border-l');
+                aside.classList.add('left-0', 'border-r');
+                document.querySelector('table').classList.remove('text-right');
+                document.querySelector('table').classList.add('text-left');
+                btnEn.classList.add('bg-primary', 'text-white');
+                btnEn.classList.remove('text-on-surface-variant');
+                btnAr.classList.remove('bg-primary', 'text-white');
+                btnAr.classList.add('text-on-surface-variant');
+            } else {
+                main.classList.add('lg:mr-64');
+                main.classList.remove('lg:ml-64');
+                aside.classList.add('right-0', 'border-l');
+                aside.classList.remove('left-0', 'border-r');
+                document.querySelector('table').classList.add('text-right');
+                document.querySelector('table').classList.remove('text-left');
+                btnAr.classList.add('bg-primary', 'text-white');
+                btnAr.classList.remove('text-on-surface-variant');
+                btnEn.classList.remove('bg-primary', 'text-white');
+                btnEn.classList.add('text-on-surface-variant');
+            }
+
+            // In a real app, we'd loop through elements with data-t attributes
+            // For this demo, we'll manually update a few key ones
+            document.title = translations[lang].title;
+            document.querySelector('h1').textContent = translations[lang].mainTitle;
+            document.querySelector('h1 + p').textContent = translations[lang].mainDesc;
+        }
+
+        btnAr.onclick = () => setLanguage('ar');
+        btnEn.onclick = () => setLanguage('en');
+    </script>
+</body></html>

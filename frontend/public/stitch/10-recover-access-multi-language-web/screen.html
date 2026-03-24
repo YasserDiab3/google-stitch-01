@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" dir="ltr" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Password Recovery | Sentinel Safety Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#ffb3ac",
+              "surface-container": "#edeef1",
+              "secondary-container": "#a0f399",
+              "secondary-fixed-dim": "#88d982",
+              "tertiary-fixed": "#ffdad6",
+              "primary-fixed": "#d6e3ff",
+              "on-surface-variant": "#424752",
+              "inverse-surface": "#2e3133",
+              "tertiary-container": "#bb1b21",
+              "on-error": "#ffffff",
+              "inverse-primary": "#a9c7ff",
+              "surface-dim": "#d9dadd",
+              "surface-bright": "#f9f9fd",
+              "on-primary-fixed": "#001b3d",
+              "outline-variant": "#c2c6d4",
+              "primary-container": "#005eb8",
+              "on-secondary-fixed": "#002204",
+              "on-primary": "#ffffff",
+              "surface-variant": "#e2e2e6",
+              "background": "#f9f9fd",
+              "on-secondary-fixed-variant": "#005312",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed-variant": "#930010",
+              "error-container": "#ffdad6",
+              "surface-tint": "#005db6",
+              "outline": "#727783",
+              "on-primary-fixed-variant": "#00468c",
+              "surface-container-low": "#f3f3f7",
+              "on-background": "#191c1e",
+              "on-tertiary-container": "#ffceca",
+              "inverse-on-surface": "#f0f0f4",
+              "error": "#ba1a1a",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed-dim": "#a9c7ff",
+              "on-tertiary-fixed": "#410003",
+              "on-primary-container": "#c8daff",
+              "surface-container-high": "#e7e8eb",
+              "surface": "#f9f9fd",
+              "secondary-fixed": "#a3f69c",
+              "on-tertiary": "#ffffff",
+              "surface-container-highest": "#e2e2e6",
+              "secondary": "#1b6d24",
+              "primary": "#00478d",
+              "on-error-container": "#93000a",
+              "tertiary": "#940010",
+              "on-surface": "#191c1e",
+              "on-secondary-container": "#217128"
+            },
+            fontFamily: {
+              "headline": ["Public Sans", "Noto Sans Arabic", "sans-serif"],
+              "body": ["Inter", "Noto Sans Arabic", "sans-serif"],
+              "label": ["Inter", "Noto Sans Arabic", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        [dir="rtl"] .material-symbols-outlined.flip-rtl {
+            transform: scaleX(-1);
+        }
+        [lang="ar"] {
+            font-family: 'Noto Sans Arabic', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-background min-h-screen flex flex-col items-center justify-center p-6 transition-all duration-300">
+<!-- Top Navigation -->
+<header class="fixed top-0 w-full flex justify-between items-center px-6 md:px-12 h-20 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="shield">shield</span>
+<span class="font-headline font-black text-xl md:text-2xl tracking-tighter text-primary">Sentinel Safety Pro</span>
+</div>
+<div class="flex items-center gap-4 md:gap-8">
+<!-- Language Toggle -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant hover:bg-surface-container-low transition-colors text-sm font-semibold" id="lang-toggle" onclick="toggleLanguage()">
+<span class="material-symbols-outlined text-lg" data-icon="language">language</span>
+<span id="lang-label">العربية</span>
+</button>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium text-sm" href="/login">
+<span class="material-symbols-outlined text-lg flip-rtl" data-icon="arrow_back">arrow_back</span>
+<span id="back-to-login-text">Back to Login</span>
+</a>
+</div>
+</header>
+<main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+<!-- Left Column: Editorial/Brand Presence -->
+<div class="hidden md:flex md:col-span-7 flex-col gap-8 pr-12 rtl:pr-0 rtl:pl-12">
+<div class="space-y-4">
+<span class="inline-block py-1 px-3 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-[0.2em] rounded-sm" id="badge-text">
+                    Authority &amp; Security
+                </span>
+<h1 class="font-headline font-extrabold text-6xl text-on-background leading-tight tracking-tighter" id="hero-title">
+                    Secure Recovery for <br/><span class="text-primary">Safety Leaders.</span>
+</h1>
+<p class="text-on-surface-variant text-lg max-w-lg leading-relaxed" id="hero-desc">
+                    Protecting your credentials is as critical as protecting your team on-site. Follow our verified recovery protocol to regain access to your EHS dashboard.
+                </p>
+</div>
+<!-- Asymmetric Data Highlight -->
+<div class="grid grid-cols-2 gap-6 mt-8">
+<div class="bg-surface-container-low p-8 rounded-xl border-l-4 rtl:border-l-0 rtl:border-r-4 border-primary">
+<span class="material-symbols-outlined text-primary mb-4 block" data-icon="encrypted">encrypted</span>
+<h3 class="font-headline font-bold text-xl mb-1">AES-256</h3>
+<p class="text-sm text-on-surface-variant" id="card-1-text">End-to-end encryption for all identity transactions.</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl border-l-4 rtl:border-l-0 rtl:border-r-4 border-secondary">
+<span class="material-symbols-outlined text-secondary mb-4 block" data-icon="verified_user">verified_user</span>
+<h3 class="font-headline font-bold text-xl mb-1">99.9%</h3>
+<p class="text-sm text-on-surface-variant" id="card-2-text">Verified access uptime for critical response teams.</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Recovery Form -->
+<div class="md:col-span-5">
+<div class="bg-surface-container-lowest shadow-[0_20px_40px_rgba(25,28,30,0.06)] rounded-xl overflow-hidden border border-outline-variant/10">
+<div class="h-1.5 w-full bg-primary"></div>
+<div class="p-8 md:p-12">
+<div id="recovery-form">
+<div class="mb-8">
+<h2 class="font-headline font-bold text-3xl mb-2" id="form-title">Recover Access</h2>
+<p class="text-on-surface-variant text-sm" id="form-desc">Enter your registered email or username and we'll send a secure reset link to your inbox.</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant" for="identifier" id="input-label">
+                                    Email or Username
+                                </label>
+<div class="relative">
+<input class="w-full h-14 px-4 bg-surface-container-highest border-none rounded-lg focus:ring-0 focus:border-b-2 focus:border-primary transition-all text-on-surface font-medium placeholder:text-outline rtl:text-right" id="identifier" name="identifier" placeholder="name@company.com" required="" type="text"/>
+<span class="absolute right-4 rtl:right-auto rtl:left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="person">person</span>
+</div>
+</div>
+<button class="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2" id="submit-btn" onclick="showSuccess()" type="button">
+<span>Send Recovery Link</span>
+<span class="material-symbols-outlined text-xl flip-rtl" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 pt-8 border-t border-outline-variant/20 flex flex-col gap-4">
+<p class="text-xs text-on-surface-variant text-center" id="support-text">
+                                Having trouble? Contact your system administrator or reach out to <span class="text-primary font-semibold">Sentinel Support</span>.
+                            </p>
+</div>
+</div>
+<!-- Success State (Hidden) -->
+<div class="hidden" id="success-state">
+<div class="flex flex-col items-center text-center py-4">
+<div class="w-20 h-20 bg-secondary-container rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-on-secondary-container text-4xl" data-icon="mark_email_read" style="font-variation-settings: 'FILL' 1;">mark_email_read</span>
+</div>
+<h2 class="font-headline font-bold text-3xl mb-4" id="success-title">Check Your Inbox</h2>
+<p class="text-on-surface-variant text-base leading-relaxed mb-8" id="success-desc">
+                                We've dispatched a secure recovery link to your email. For security, this link will expire in <span class="font-bold text-on-background">15 minutes</span>.
+                            </p>
+<a class="w-full h-14 flex items-center justify-center gap-2 border border-outline text-on-surface font-bold rounded-lg hover:bg-surface-container-low transition-colors" href="/login">
+<span class="material-symbols-outlined flip-rtl" data-icon="login">login</span>
+<span id="return-login-btn">Return to Login</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Security Badge -->
+<div class="mt-6 flex items-center justify-center gap-6 opacity-60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Secure Protocol</span>
+</div>
+<div class="w-1 h-1 bg-outline rounded-full"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="gpp_good">gpp_good</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">ISO 27001</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Texture Elements -->
+<div class="fixed -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10"></div>
+<div class="fixed top-20 -right-24 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -z-10"></div>
+<!-- Footer -->
+<footer class="fixed bottom-8 w-full px-12 hidden md:flex justify-between items-center opacity-40">
+<p class="text-[10px] font-medium text-on-surface-variant" id="copyright">© 2024 SENTINEL EHS GLOBAL. ALL RIGHTS RESERVED.</p>
+<div class="flex gap-6">
+<a class="text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-colors" href="#" id="privacy-link">Privacy Policy</a>
+<a class="text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-colors" href="#" id="terms-link">Terms of Service</a>
+</div>
+</footer>
+<script>
+        const content = {
+            en: {
+                langLabel: "العربية",
+                backToLogin: "Back to Login",
+                badge: "Authority & Security",
+                heroTitle: 'Secure Recovery for <br/><span class="text-primary">Safety Leaders.</span>',
+                heroDesc: "Protecting your credentials is as critical as protecting your team on-site. Follow our verified recovery protocol to regain access to your EHS dashboard.",
+                card1: "End-to-end encryption for all identity transactions.",
+                card2: "Verified access uptime for critical response teams.",
+                formTitle: "Recover Access",
+                formDesc: "Enter your registered email or username and we'll send a secure reset link to your inbox.",
+                inputLabel: "Email or Username",
+                inputPlaceholder: "name@company.com",
+                submitBtn: "Send Recovery Link",
+                supportText: 'Having trouble? Contact your system administrator or reach out to <span class="text-primary font-semibold">Sentinel Support</span>.',
+                successTitle: "Check Your Inbox",
+                successDesc: 'We\'ve dispatched a secure recovery link to your email. For security, this link will expire in <span class="font-bold text-on-background">15 minutes</span>.',
+                returnLogin: "Return to Login",
+                copyright: "© 2024 SENTINEL EHS GLOBAL. ALL RIGHTS RESERVED.",
+                privacy: "Privacy Policy",
+                terms: "Terms of Service"
+            },
+            ar: {
+                langLabel: "English",
+                backToLogin: "العودة لتسجيل الدخول",
+                badge: "السلطة والأمان",
+                heroTitle: 'استرداد آمن لـ <br/><span class="text-primary">قادة السلامة.</span>',
+                heroDesc: "حماية بيانات اعتمادك لا تقل أهمية عن حماية فريقك في الموقع. اتبع بروتوكول الاسترداد المعتمد لدينا لاستعادة الوصول إلى لوحة تحكم البيئة والصحة والسلامة الخاصة بك.",
+                card1: "تشفير تام بين الطرفين لجميع معاملات الهوية.",
+                card2: "وقت تشغيل وصول موثوق بنسبة 99.9٪ لفرق الاستجابة الحرجة.",
+                formTitle: "استعادة الوصول",
+                formDesc: "أدخل بريدك الإلكتروني المسجل أو اسم المستخدم وسنرسل رابط استرداد آمن إلى صندوق الوارد الخاص بك.",
+                inputLabel: "البريد الإلكتروني أو اسم المستخدم",
+                inputPlaceholder: "name@company.com",
+                submitBtn: "إرسال رابط الاسترداد",
+                supportText: 'تواجه مشكلة؟ اتصل بمسؤول النظام لديك أو تواصل مع <span class="text-primary font-semibold">دعم سنتينل</span>.',
+                successTitle: "تحقق من بريدك الوارد",
+                successDesc: 'لقد أرسلنا رابط استرداد آمن إلى بريدك الإلكتروني. لدواعي أمنية، ستنتهي صلاحية هذا الرابط خلال <span class="font-bold text-on-background">15 دقيقة</span>.',
+                returnLogin: "العودة لتسجيل الدخول",
+                copyright: "© 2024 سنتينل للسلامة العالمية. جميع الحقوق محفوظة.",
+                privacy: "سياسة الخصوصية",
+                terms: "شروط الخدمة"
+            }
+        };
+
+        function toggleLanguage() {
+            const html = document.documentElement;
+            const currentLang = html.lang === 'en' ? 'ar' : 'en';
+            const currentDir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            
+            html.lang = currentLang;
+            html.dir = currentDir;
+            
+            const data = content[currentLang];
+            
+            document.getElementById('lang-label').textContent = data.langLabel;
+            document.getElementById('back-to-login-text').textContent = data.backToLogin;
+            document.getElementById('badge-text').textContent = data.badge;
+            document.getElementById('hero-title').innerHTML = data.heroTitle;
+            document.getElementById('hero-desc').textContent = data.heroDesc;
+            document.getElementById('card-1-text').textContent = data.card1;
+            document.getElementById('card-2-text').textContent = data.card2;
+            document.getElementById('form-title').textContent = data.formTitle;
+            document.getElementById('form-desc').textContent = data.formDesc;
+            document.getElementById('input-label').textContent = data.inputLabel;
+            document.getElementById('identifier').placeholder = data.inputPlaceholder;
+            document.querySelector('#submit-btn span').textContent = data.submitBtn;
+            document.getElementById('support-text').innerHTML = data.supportText;
+            document.getElementById('success-title').textContent = data.successTitle;
+            document.getElementById('success-desc').innerHTML = data.successDesc;
+            document.getElementById('return-login-btn').textContent = data.returnLogin;
+            document.getElementById('copyright').textContent = data.copyright;
+            document.getElementById('privacy-link').textContent = data.privacy;
+            document.getElementById('terms-link').textContent = data.terms;
+        }
+
+        function showSuccess() {
+            document.getElementById('recovery-form').classList.add('hidden');
+            document.getElementById('success-state').classList.remove('hidden');
+        }
+    </script>
+</body></html>

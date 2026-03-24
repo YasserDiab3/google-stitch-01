@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Password Recovery | Sentinel Safety Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#ffb3ac",
+              "surface-container": "#edeef1",
+              "secondary-container": "#a0f399",
+              "secondary-fixed-dim": "#88d982",
+              "tertiary-fixed": "#ffdad6",
+              "primary-fixed": "#d6e3ff",
+              "on-surface-variant": "#424752",
+              "inverse-surface": "#2e3133",
+              "tertiary-container": "#bb1b21",
+              "on-error": "#ffffff",
+              "inverse-primary": "#a9c7ff",
+              "surface-dim": "#d9dadd",
+              "surface-bright": "#f9f9fd",
+              "on-primary-fixed": "#001b3d",
+              "outline-variant": "#c2c6d4",
+              "primary-container": "#005eb8",
+              "on-secondary-fixed": "#002204",
+              "on-primary": "#ffffff",
+              "surface-variant": "#e2e2e6",
+              "background": "#f9f9fd",
+              "on-secondary-fixed-variant": "#005312",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed-variant": "#930010",
+              "error-container": "#ffdad6",
+              "surface-tint": "#005db6",
+              "outline": "#727783",
+              "on-primary-fixed-variant": "#00468c",
+              "surface-container-low": "#f3f3f7",
+              "on-background": "#191c1e",
+              "on-tertiary-container": "#ffceca",
+              "inverse-on-surface": "#f0f0f4",
+              "error": "#ba1a1a",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed-dim": "#a9c7ff",
+              "on-tertiary-fixed": "#410003",
+              "on-primary-container": "#c8daff",
+              "surface-container-high": "#e7e8eb",
+              "surface": "#f9f9fd",
+              "secondary-fixed": "#a3f69c",
+              "on-tertiary": "#ffffff",
+              "surface-container-highest": "#e2e2e6",
+              "secondary": "#1b6d24",
+              "primary": "#00478d",
+              "on-error-container": "#93000a",
+              "tertiary": "#940010",
+              "on-surface": "#191c1e",
+              "on-secondary-container": "#217128"
+            },
+            fontFamily: {
+              "headline": ["Public Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(249, 249, 253, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .hazard-strip {
+            background: repeating-linear-gradient(
+                45deg,
+                #940010,
+                #940010 10px,
+                #bb1b21 10px,
+                #bb1b21 20px
+            );
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-background min-h-screen flex flex-col items-center justify-center p-6">
+<!-- Top Navigation Anchor (Non-Shell version for focus) -->
+<header class="fixed top-0 w-full flex justify-between items-center px-12 h-20 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="shield">shield</span>
+<span class="font-headline font-black text-2xl tracking-tighter text-primary">Sentinel Safety Pro</span>
+</div>
+<a class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium text-sm" href="/login">
+<span class="material-symbols-outlined text-lg" data-icon="arrow_back">arrow_back</span>
+            Back to Login
+        </a>
+</header>
+<main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+<!-- Left Column: Editorial/Brand Presence -->
+<div class="hidden md:flex md:col-span-7 flex-col gap-8 pr-12">
+<div class="space-y-4">
+<span class="inline-block py-1 px-3 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-[0.2em] rounded-sm">
+                    Authority &amp; Security
+                </span>
+<h1 class="font-headline font-extrabold text-6xl text-on-background leading-tight tracking-tighter">
+                    Secure Recovery for <br/><span class="text-primary">Safety Leaders.</span>
+</h1>
+<p class="text-on-surface-variant text-lg max-w-lg leading-relaxed">
+                    Protecting your credentials is as critical as protecting your team on-site. Follow our verified recovery protocol to regain access to your EHS dashboard.
+                </p>
+</div>
+<!-- Asymmetric Data Highlight -->
+<div class="grid grid-cols-2 gap-6 mt-8">
+<div class="bg-surface-container-low p-8 rounded-xl border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary mb-4 block" data-icon="encrypted">encrypted</span>
+<h3 class="font-headline font-bold text-xl mb-1">AES-256</h3>
+<p class="text-label-md text-on-surface-variant">End-to-end encryption for all identity transactions.</p>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl border-l-4 border-secondary">
+<span class="material-symbols-outlined text-secondary mb-4 block" data-icon="verified_user">verified_user</span>
+<h3 class="font-headline font-bold text-xl mb-1">99.9%</h3>
+<p class="text-label-md text-on-surface-variant">Verified access uptime for critical response teams.</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Focused Recovery Form -->
+<div class="md:col-span-5">
+<div class="bg-surface-container-lowest shadow-[0_20px_40px_rgba(25,28,30,0.06)] rounded-xl overflow-hidden border border-outline-variant/10">
+<!-- Branding Accent -->
+<div class="h-1.5 w-full bg-primary"></div>
+<div class="p-10 md:p-12">
+<!-- Form State: Default -->
+<div class="block" id="recovery-form">
+<div class="mb-8">
+<h2 class="font-headline font-bold text-3xl mb-2">Recover Access</h2>
+<p class="text-on-surface-variant text-sm">Enter your registered email address and we'll send a secure reset link to your inbox.</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant" for="email">
+                                    Corporate Email Address
+                                </label>
+<div class="relative">
+<input class="w-full h-14 px-4 bg-surface-container-highest border-none rounded-lg focus:ring-0 focus:border-b-2 focus:border-primary transition-all text-on-surface font-medium placeholder:text-outline" id="email" name="email" placeholder="name@company.com" required="" type="email"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="mail">mail</span>
+</div>
+</div>
+<button class="w-full h-14 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2" onclick="document.getElementById('recovery-form').classList.add('hidden'); document.getElementById('success-state').classList.remove('hidden');" type="button">
+                                Send Recovery Link
+                                <span class="material-symbols-outlined text-xl" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 pt-8 border-t border-outline-variant/20 flex flex-col gap-4">
+<p class="text-xs text-on-surface-variant text-center">
+                                Having trouble? Contact your system administrator or reach out to <span class="text-primary font-semibold">Sentinel Support</span>.
+                            </p>
+</div>
+</div>
+<!-- Form State: Success (Hidden by default) -->
+<div class="hidden" id="success-state">
+<div class="flex flex-col items-center text-center py-4">
+<div class="w-20 h-20 bg-secondary-container rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-on-secondary-container text-4xl" data-icon="mark_email_read" style="font-variation-settings: 'FILL' 1;">mark_email_read</span>
+</div>
+<h2 class="font-headline font-bold text-3xl mb-4">Check Your Inbox</h2>
+<p class="text-on-surface-variant text-base leading-relaxed mb-8">
+                                We've dispatched a secure recovery link to your email. For security, this link will expire in <span class="font-bold text-on-background">15 minutes</span>.
+                            </p>
+<div class="w-full p-4 bg-surface-container-low rounded-lg mb-8 text-left">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="info">info</span>
+<div>
+<p class="text-xs font-bold text-on-surface mb-1 uppercase tracking-wider">Note</p>
+<p class="text-xs text-on-surface-variant">If the email doesn't arrive shortly, please check your spam folder or verify the address provided.</p>
+</div>
+</div>
+</div>
+<a class="w-full h-14 flex items-center justify-center gap-2 border border-outline text-on-surface font-bold rounded-lg hover:bg-surface-container-low transition-colors" href="/login">
+<span class="material-symbols-outlined" data-icon="login">login</span>
+                                Return to Login
+                            </a>
+<button class="mt-6 text-sm font-semibold text-primary hover:underline underline-offset-4" onclick="location.reload()">
+                                Didn't get the email? Try again
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Security Badge -->
+<div class="mt-6 flex items-center justify-center gap-6 opacity-60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Secure Protocol</span>
+</div>
+<div class="w-1 h-1 bg-outline rounded-full"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="gpp_good">gpp_good</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">ISO 27001</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Texture Element -->
+<div class="fixed -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10"></div>
+<div class="fixed top-20 -right-24 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -z-10"></div>
+<!-- Footer Meta -->
+<footer class="fixed bottom-8 w-full px-12 flex justify-between items-center opacity-40">
+<p class="text-[10px] font-medium text-on-surface-variant">© 2024 SENTINEL EHS GLOBAL. ALL RIGHTS RESERVED.</p>
+<div class="flex gap-6">
+<a class="text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</footer>
+</body></html>

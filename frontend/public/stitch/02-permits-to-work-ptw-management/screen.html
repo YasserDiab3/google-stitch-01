@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sentinel EHS - Permit to Work Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;700;800;900&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed-variant": "#005312",
+                        "secondary-fixed": "#a3f69c",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c2c6d4",
+                        "on-background": "#191c1e",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e2e2e6",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#edeef1",
+                        "on-secondary-fixed": "#002204",
+                        "surface-container-low": "#f3f3f7",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "secondary": "#1b6d24",
+                        "on-primary-fixed": "#001b3d",
+                        "surface": "#f9f9fd",
+                        "secondary-fixed-dim": "#88d982",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-primary-container": "#c8daff",
+                        "tertiary": "#940010",
+                        "inverse-surface": "#2e3133",
+                        "inverse-primary": "#a9c7ff",
+                        "surface-dim": "#d9dadd",
+                        "on-tertiary-fixed-variant": "#930010",
+                        "outline": "#727783",
+                        "background": "#f9f9fd",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "on-secondary-container": "#217128",
+                        "surface-variant": "#e2e2e6",
+                        "surface-container-high": "#e7e8eb",
+                        "surface-bright": "#f9f9fd",
+                        "on-surface-variant": "#424752",
+                        "primary-fixed": "#d6e3ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#410003",
+                        "tertiary-container": "#bb1b21",
+                        "surface-tint": "#005db6",
+                        "inverse-on-surface": "#f0f0f4",
+                        "tertiary-fixed": "#ffdad6",
+                        "primary": "#00478d",
+                        "secondary-container": "#a0f399",
+                        "on-tertiary-container": "#ffceca",
+                        "on-surface": "#191c1e",
+                        "on-error": "#ffffff",
+                        "primary-container": "#005eb8",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        "headline": ["Public Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ptw-hazard-strip {
+            background: repeating-linear-gradient(45deg, #ffdad6, #ffdad6 10px, #bb1b21 10px, #bb1b21 20px);
+            opacity: 0.1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<div class="flex min-h-screen">
+<!-- SideNavBar Component -->
+<aside class="hidden lg:flex flex-col h-screen sticky top-0 py-6 px-4 space-y-2 bg-slate-50 dark:bg-slate-950 h-screen w-64 border-r-0 font-inter text-sm font-medium">
+<div class="mb-8 px-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<h1 class="text-lg font-black tracking-tighter text-blue-900 dark:text-blue-50">Sentinel EHS</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Management System</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">badge</span>
+<span>Employees</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-sm rounded-lg hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+<span>Permits (PTW)</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">medical_services</span>
+<span>Clinic</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">engineering</span>
+<span>PPE</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">report_problem</span>
+<span>Violations</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">science</span>
+<span>Chemicals</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span>Legal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">published_with_changes</span>
+<span>Change (MOC)</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span>KPIs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span>Budget</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:pl-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">archive</span>
+<span>Archive</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface">
+<!-- TopNavBar Component -->
+<header class="flex justify-between items-center px-6 h-16 w-full max-w-full mx-auto fixed top-0 z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none font-public-sans tracking-tight">
+<div class="flex items-center gap-8">
+<span class="lg:hidden text-xl font-bold text-blue-900">Sentinel EHS</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 active:scale-95 duration-150" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 active:scale-95 duration-150" href="#">Analytics</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 active:scale-95 duration-150" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-600 hover:bg-blue-50/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">language</span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-blue-50/50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-blue-50/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-px bg-outline-variant/30 mx-2"></div>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="Professional male corporate profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaw4AsXAR_w8WhRvbfFN1lxgjRpa-2eDeJ3H5WWO_CkzFauugO4jUDgoJj_yXPWZ1tBiowbj2kvPC1M6UCCxwi9AMvl-sMM9fRC4YTGQFfTtyqR8SMCK0UC3__CfMktMPTYdqc3DWlJTVcgiV4uFs7gtKFSCxsAEUmPj1KubJc9yKbezV73vOC6Mj6HWI_Z9PzrCiaDPXMWMcEaOXvWPa9UFEpLz_s24CStGR7QoGG2YMfD7ulEF6rUhYkGAY9ufKOeKfvQVVSLVhm"/>
+</div>
+</header>
+<!-- PTW Content -->
+<div class="mt-16 p-8 lg:p-12 space-y-12 max-w-[1600px] mx-auto w-full">
+<!-- Page Header with Editorial Style -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<p class="text-label-md font-bold text-primary tracking-[0.2em] uppercase">Control of Work</p>
+<h2 class="text-display-lg font-headline font-black text-on-surface tracking-tight leading-none">Permit to Work Management</h2>
+<div class="flex items-center gap-4 text-on-surface-variant font-medium pt-2">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span> 42 Active Permits</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-error"></span> 3 Critical Expired</span>
+</div>
+</div>
+<div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-8 py-4 rounded-md font-headline font-bold text-lg flex items-center gap-3 shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+                            Issue New Permit
+                        </button>
+</div>
+</section>
+<!-- Board Filter Tabs -->
+<div class="flex overflow-x-auto pb-4 gap-2 scrollbar-hide">
+<button class="px-6 py-2 bg-surface-container-highest text-on-surface font-bold rounded-full whitespace-nowrap">All Permits</button>
+<button class="px-6 py-2 hover:bg-surface-container text-on-surface-variant font-medium rounded-full whitespace-nowrap">Hot Work</button>
+<button class="px-6 py-2 hover:bg-surface-container text-on-surface-variant font-medium rounded-full whitespace-nowrap">Cold Work</button>
+<button class="px-6 py-2 hover:bg-surface-container text-on-surface-variant font-medium rounded-full whitespace-nowrap">Confined Space</button>
+<button class="px-6 py-2 hover:bg-surface-container text-on-surface-variant font-medium rounded-full whitespace-nowrap">Working at Height</button>
+<button class="px-6 py-2 hover:bg-surface-container text-on-surface-variant font-medium rounded-full whitespace-nowrap">Excavation</button>
+</div>
+<!-- PTW Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Permit Card: EXPIRED (Urgent) -->
+<div class="group relative bg-surface-container-lowest overflow-hidden flex flex-col p-6 space-y-6">
+<!-- Hazard Strip -->
+<div class="absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rotate-45 ptw-hazard-strip group-hover:opacity-20 transition-opacity"></div>
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-1 px-[2px] bg-error"></div>
+<div>
+<p class="text-xs font-bold text-error tracking-widest uppercase">EXPIRED</p>
+<h3 class="text-xl font-headline font-black text-on-surface">Hot Work: Main Reactor Welding</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-tertiary">warning</span>
+</div>
+<div class="grid grid-cols-2 gap-4 py-4 border-y border-outline-variant/10">
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Issuer</p>
+<p class="text-sm font-semibold">Ahmed Al-Sayed</p>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Receiver</p>
+<p class="text-sm font-semibold">Mark Thompson</p>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Validity End</span>
+<span class="text-sm font-black text-error">Oct 24, 14:00 (Overdue)</span>
+</div>
+<div class="flex -space-x-2">
+<img alt="Issuer profile" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Issuer profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3SG14MV8sZas8aLrpLMAm_tjdktw7pINjOg8Jg3P8j72hV-6qNNlznKIzC2KnE6O4tdNfFzEbGLaZxx7ohNOBvq69c30UzUbI5SwH_1dQzge7L1uYlbw6hCBZjQOdU_GduLgXAp-H5CpQgTmPmvVKR8ghKonpuW3g44U7dVch-5yISaU_r66s-D-WHL0f2JdS777qMNPEXAzyuEp5ePftTjUqUxTv7XBtppS_hQXV0K3IyVHcEM7Md93ArU5cafFmiUkBReCwJXGy"/>
+<img alt="Receiver profile" class="w-8 h-8 rounded-full border-2 border-surface-container-lowest" data-alt="Receiver profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVnaMHonWQ4YPxjoRZBs7hh01SBBpUSLpSt777zVxWhQKCAFa0JSV_7i5bAFzDuBUCwYPe_xdQvrwgWwJXRSulWnUowjTqnuVXLfizhPuCV8BMacmi1QUrw0yW52cyJki0qKR7MmdVxg6dn4EXy1PO9mGTJII-ER3csPJNJIaQnl0Fwtz7jBJq2q5GDj-Z6bCFpwGSjSGYZj5OPjwRHAnoz3T3WFaPeF08u-E1DQLJv3xd-1E0i-ZlHjLjF0veopA6G7D8eqnen5Vk"/>
+</div>
+</div>
+</div>
+<!-- Permit Card: ACTIVE (Safe) -->
+<div class="bg-surface-container-lowest flex flex-col p-6 space-y-6">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-1 px-[2px] bg-secondary"></div>
+<div>
+<p class="text-xs font-bold text-secondary tracking-widest uppercase">APPROVED &amp; ACTIVE</p>
+<h3 class="text-xl font-headline font-black text-on-surface">Confined Space: Storage Tank 4</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="grid grid-cols-2 gap-4 py-4 border-y border-outline-variant/10">
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Issuer</p>
+<p class="text-sm font-semibold">Sara Jenkins</p>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Receiver</p>
+<p class="text-sm font-semibold">Khalid Mansour</p>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Validity End</span>
+<span class="text-sm font-black text-on-surface">Oct 24, 18:30</span>
+</div>
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant px-3 py-1 rounded-full text-[10px] font-black">7H REMAINING</span>
+</div>
+</div>
+<!-- Permit Card: PENDING -->
+<div class="bg-surface-container-lowest flex flex-col p-6 space-y-6">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-1 px-[2px] bg-primary"></div>
+<div>
+<p class="text-xs font-bold text-primary tracking-widest uppercase">PENDING APPROVAL</p>
+<h3 class="text-xl font-headline font-black text-on-surface">Working at Height: Flare Stack</h3>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary">hourglass_empty</span>
+</div>
+<div class="grid grid-cols-2 gap-4 py-4 border-y border-outline-variant/10">
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Requested By</p>
+<p class="text-sm font-semibold">Oliver Smith</p>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Level</p>
+<p class="text-sm font-semibold">High Complexity</p>
+</div>
+</div>
+<div class="flex justify-end gap-2">
+<button class="px-4 py-2 text-primary font-bold text-sm border border-primary hover:bg-primary/5 transition-colors">Review Docs</button>
+<button class="px-4 py-2 bg-primary text-on-primary font-bold text-sm shadow hover:bg-primary-container transition-colors">Authorize</button>
+</div>
+</div>
+<!-- Additional Permit Cards for Board Depth -->
+<div class="bg-surface-container-lowest flex flex-col p-6 space-y-6 opacity-80">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-1 px-[2px] bg-outline"></div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant tracking-widest uppercase">CLOSED</p>
+<h3 class="text-xl font-headline font-black text-on-surface">Cold Work: Pipeline Inspection</h3>
+</div>
+</div>
+</div>
+<div class="text-xs text-on-surface-variant italic">Work completed on Oct 23. Awaiting documentation upload.</div>
+</div>
+<!-- Quick Stats/Bento Element -->
+<div class="md:col-span-2 bg-blue-900 text-on-primary-container p-8 rounded-xl relative overflow-hidden flex flex-col justify-center">
+<div class="absolute -right-12 -top-12 w-64 h-64 bg-primary rounded-full opacity-20 blur-3xl"></div>
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="space-y-1">
+<p class="text-xs font-bold tracking-widest uppercase text-primary-fixed">Compliance Rate</p>
+<h4 class="text-4xl font-headline font-black">98.4%</h4>
+</div>
+<div class="space-y-1">
+<p class="text-xs font-bold tracking-widest uppercase text-primary-fixed">Mean Approval Time</p>
+<h4 class="text-4xl font-headline font-black">12.5m</h4>
+</div>
+<div class="space-y-1">
+<p class="text-xs font-bold tracking-widest uppercase text-primary-fixed">Avg Duration</p>
+<h4 class="text-4xl font-headline font-black">4.2h</h4>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Localization Placeholder -->
+<div class="pt-12 flex justify-between items-center text-on-surface-variant">
+<div class="flex gap-4 text-xs font-bold uppercase tracking-widest">
+<button class="text-primary border-b-2 border-primary">English (US)</button>
+<button class="hover:text-primary transition-colors">العربية (AR)</button>
+</div>
+<p class="text-xs opacity-50">Sentinel EHS © 2024 • Enterprise PTW Framework 4.0</p>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Bottom NavBar (Suppressed if on focused task, but PTW management is a top-level destination) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-50 border-t-0 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] h-16 flex items-center justify-around px-4 z-50">
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-blue-700" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+</a>
+<button class="-mt-12 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center">
+<span class="material-symbols-outlined">add</span>
+</button>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">analytics</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">person</span>
+</a>
+</nav>
+</body></html>

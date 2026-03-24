@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Incident Reports | Sentinel EHS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "surface": "#f9f9fd",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "inverse-surface": "#2e3133",
+                        "surface-dim": "#d9dadd",
+                        "on-surface-variant": "#424752",
+                        "on-tertiary-container": "#ffceca",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-secondary-fixed": "#002204",
+                        "secondary": "#1b6d24",
+                        "outline-variant": "#c2c6d4",
+                        "on-secondary-container": "#217128",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#bb1b21",
+                        "on-tertiary-fixed": "#410003",
+                        "surface-container-high": "#e7e8eb",
+                        "surface-container-low": "#f3f3f7",
+                        "surface-container": "#edeef1",
+                        "secondary-container": "#a0f399",
+                        "surface-variant": "#e2e2e6",
+                        "tertiary": "#940010",
+                        "on-secondary-fixed-variant": "#005312",
+                        "inverse-on-surface": "#f0f0f4",
+                        "surface-container-highest": "#e2e2e6",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-bright": "#f9f9fd",
+                        "tertiary-fixed": "#ffdad6",
+                        "on-primary-fixed": "#001b3d",
+                        "secondary-fixed": "#a3f69c",
+                        "outline": "#727783",
+                        "primary-container": "#005eb8",
+                        "inverse-primary": "#a9c7ff",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#005db6",
+                        "background": "#f9f9fd",
+                        "secondary-fixed-dim": "#88d982",
+                        "primary": "#00478d",
+                        "on-primary-container": "#c8daff",
+                        "on-error": "#ffffff",
+                        "on-background": "#191c1e",
+                        "on-tertiary-fixed-variant": "#930010",
+                        "on-primary": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Public Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Public Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 flex flex-col bg-slate-50 border-r border-slate-200 z-50">
+<div class="p-6">
+<div class="text-lg font-black uppercase text-blue-900">The Sentinel</div>
+<div class="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Safety Intelligence</div>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="group flex items-center px-4 py-3 gap-3 transition-all text-slate-500 hover:text-blue-900 hover:bg-white" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="group flex items-center px-4 py-3 gap-3 transition-all bg-white text-blue-900 font-bold border-r-4 border-blue-900" href="#">
+<span class="material-symbols-outlined" data-icon="report_problem">report_problem</span>
+<span class="font-medium text-sm">Incidents</span>
+</a>
+<a class="group flex items-center px-4 py-3 gap-3 transition-all text-slate-500 hover:text-blue-900 hover:bg-white" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="font-medium text-sm">Inspections</span>
+</a>
+<a class="group flex items-center px-4 py-3 gap-3 transition-all text-slate-500 hover:text-blue-900 hover:bg-white" href="#">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-medium text-sm">Hazards</span>
+</a>
+<a class="group flex items-center px-4 py-3 gap-3 transition-all text-slate-500 hover:text-blue-900 hover:bg-white" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+<span class="font-medium text-sm">Compliance</span>
+</a>
+<a class="group flex items-center px-4 py-3 gap-3 transition-all text-slate-500 hover:text-blue-900 hover:bg-white" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="font-medium text-sm">Reports</span>
+</a>
+</nav>
+<div class="p-4 mt-auto">
+<button class="w-full bg-primary text-white py-3 rounded-lg font-bold text-sm shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Log New Incident
+            </button>
+<div class="mt-4 pt-4 border-t border-slate-200">
+<a class="group flex items-center px-4 py-2 gap-3 transition-all text-slate-500 hover:text-blue-900" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-medium text-sm">Log Out</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 h-16 px-8 flex justify-between items-center">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search reports, IDs, or personnel..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-tertiary rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<div class="h-8 w-px bg-slate-200"></div>
+<div class="flex items-center gap-3 cursor-pointer">
+<div class="text-right">
+<div class="text-xs font-bold text-blue-900">Chief Officer</div>
+<div class="text-[10px] text-slate-500 font-medium uppercase tracking-tight">EHS Dept.</div>
+</div>
+<img alt="User Profile Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary-fixed" data-alt="Professional portrait of a male safety officer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5M65KDnMBUAZZ2ywN262q9hX5rH350t3VZXBA5yUJ3KvhHDGfGtnUw_oZRkj_tNUGBIee_5Z2anafdPKTPuukU-F62zqxpUig2LJywkGdh5fiaZLUPSJDwJYL3X4Wv91sjOmQNLr8udnZCfvDl6GKm8W29YLFCNfGHPsUB7XtxNiac4OHEhpHyZUM7_-9B1mXZf9kbRGPNYVCEMI5fQq2nrskBPFHF7IjEFrkzDSzwzsp0IaGxPIh4E2LECeBcOEr1J2_ilC0jMBS"/>
+</div>
+</div>
+</header>
+<div class="p-8 max-w-7xl mx-auto space-y-8">
+<!-- Editorial Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="text-xs font-bold tracking-[0.2em] text-primary uppercase">Safety Operations</span>
+<h1 class="text-4xl font-extrabold text-on-surface tracking-tight mt-1">Incident Intelligence</h1>
+<p class="text-on-surface-variant mt-2 max-w-xl">Real-time analysis and reporting of workplace health and safety occurrences across all departments.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface font-semibold text-sm rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="picture_as_pdf">picture_as_pdf</span>
+                        Export PDF
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-low text-on-surface font-semibold text-sm rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+                        Print
+                    </button>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-bold text-sm rounded-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+                        Create New Report
+                    </button>
+</div>
+</div>
+<!-- KPI Cards Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Monthly Total</span>
+<span class="material-symbols-outlined text-primary/30" data-icon="show_chart">show_chart</span>
+</div>
+<div class="mt-2 text-3xl font-extrabold font-headline">128</div>
+<div class="mt-1 flex items-center gap-1 text-[11px] font-bold text-secondary">
+<span class="material-symbols-outlined text-xs" data-icon="arrow_downward">arrow_downward</span>
+                        12% vs last month
+                    </div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-tertiary">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Open Cases</span>
+<span class="material-symbols-outlined text-tertiary/30" data-icon="pending_actions">pending_actions</span>
+</div>
+<div class="mt-2 text-3xl font-extrabold font-headline">14</div>
+<div class="mt-1 flex items-center gap-1 text-[11px] font-bold text-tertiary">
+<span class="material-symbols-outlined text-xs" data-icon="warning">warning</span>
+                        3 Critical urgency
+                    </div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-secondary">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resolved</span>
+<span class="material-symbols-outlined text-secondary/30" data-icon="task_alt">task_alt</span>
+</div>
+<div class="mt-2 text-3xl font-extrabold font-headline">114</div>
+<div class="mt-1 flex items-center gap-1 text-[11px] font-bold text-secondary">
+<span class="material-symbols-outlined text-xs" data-icon="check">check</span>
+                        89% compliance rate
+                    </div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border-l-4 border-primary-container">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg Response</span>
+<span class="material-symbols-outlined text-primary-container/30" data-icon="timer">timer</span>
+</div>
+<div class="mt-2 text-3xl font-extrabold font-headline">2.4<span class="text-sm font-medium ml-1">hrs</span></div>
+<div class="mt-1 flex items-center gap-1 text-[11px] font-bold text-secondary">
+<span class="material-symbols-outlined text-xs" data-icon="speed">speed</span>
+                        Within target SLA
+                    </div>
+</div>
+</div>
+<!-- Table & Filters Section -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+<!-- Filter Bar -->
+<div class="p-6 border-b border-surface-container flex flex-wrap items-center justify-between gap-6">
+<div class="flex flex-wrap items-center gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Date Range</label>
+<div class="flex items-center bg-surface-container-low rounded-lg px-3 py-1.5 border-none">
+<span class="material-symbols-outlined text-sm text-slate-400 mr-2" data-icon="calendar_today">calendar_today</span>
+<span class="text-sm font-medium">Last 30 Days</span>
+<span class="material-symbols-outlined text-sm text-slate-400 ml-4 cursor-pointer" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Department</label>
+<div class="flex items-center bg-surface-container-low rounded-lg px-3 py-1.5 border-none">
+<span class="text-sm font-medium">All Departments</span>
+<span class="material-symbols-outlined text-sm text-slate-400 ml-4 cursor-pointer" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Severity</label>
+<div class="flex items-center gap-2">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-black rounded-full cursor-pointer hover:opacity-80">CRITICAL</span>
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full cursor-pointer hover:bg-surface-container-highest transition-colors">HIGH</span>
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full cursor-pointer hover:bg-surface-container-highest transition-colors">MEDIUM</span>
+<span class="px-3 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full cursor-pointer hover:bg-surface-container-highest transition-colors">LOW</span>
+</div>
+</div>
+</div>
+<button class="flex items-center gap-2 text-primary font-bold text-sm">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                        Clear All Filters
+                    </button>
+</div>
+<!-- Table Content -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-surface-container">
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Incident ID</th>
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Type</th>
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Date Reported</th>
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Severity</th>
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
+<th class="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Reporter</th>
+<th class="px-6 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<!-- Critical Item -->
+<tr class="hover:bg-slate-50 transition-colors group">
+<td class="px-6 py-4 font-mono text-sm text-primary font-bold">#INC-2023-0492</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-tertiary rounded-full"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">Chemical Spill</div>
+<div class="text-[10px] text-slate-500 font-medium">Lab Facility B</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-medium">Oct 24, 2023 • 09:12 AM</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-tertiary/10 text-tertiary text-[10px] font-black rounded border border-tertiary/20">CRITICAL</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+<span class="text-xs font-bold text-primary">In Investigation</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold">JD</div>
+<span class="text-sm font-medium">John Doe</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-400" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- High Severity Item -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-mono text-sm text-primary font-bold">#INC-2023-0488</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-tertiary-container rounded-full"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">Electrical Malfunction</div>
+<div class="text-[10px] text-slate-500 font-medium">Server Room 4</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-medium">Oct 23, 2023 • 04:30 PM</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-tertiary-container/10 text-tertiary-container text-[10px] font-black rounded border border-tertiary-container/20">HIGH</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+<span class="text-xs font-bold text-slate-500">Open</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold">SM</div>
+<span class="text-sm font-medium">Sarah Miller</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-400" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Resolved Item -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-mono text-sm text-primary font-bold">#INC-2023-0485</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-secondary-container rounded-full"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">Slip &amp; Fall Near Entry</div>
+<div class="text-[10px] text-slate-500 font-medium">Loading Dock A</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-medium">Oct 22, 2023 • 11:15 AM</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded">MEDIUM</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-secondary rounded-full"></span>
+<span class="text-xs font-bold text-secondary">Resolved</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold">RK</div>
+<span class="text-sm font-medium">Robert King</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-400" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+<!-- Another Row -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-mono text-sm text-primary font-bold">#INC-2023-0482</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-surface-container-high rounded-full"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">PPE Non-compliance</div>
+<div class="text-[10px] text-slate-500 font-medium">Manufacturing Floor</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-medium">Oct 20, 2023 • 02:45 PM</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded">LOW</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-secondary rounded-full"></span>
+<span class="text-xs font-bold text-secondary">Resolved</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold">AW</div>
+<span class="text-sm font-medium">Alice Wong</span>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-slate-400" data-icon="chevron_right">chevron_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination/Footer -->
+<div class="p-6 bg-surface-container-low flex items-center justify-between">
+<div class="text-xs text-on-surface-variant font-medium">
+                        Showing <span class="font-bold text-on-surface">1 - 15</span> of <span class="font-bold text-on-surface">128</span> reports
+                    </div>
+<div class="flex items-center gap-1">
+<button class="p-2 hover:bg-white rounded border border-slate-200 disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="px-3 py-1 bg-primary text-white text-xs font-bold rounded">1</button>
+<button class="px-3 py-1 hover:bg-white text-xs font-bold rounded">2</button>
+<button class="px-3 py-1 hover:bg-white text-xs font-bold rounded">3</button>
+<span class="px-2 text-slate-400">...</span>
+<button class="px-3 py-1 hover:bg-white text-xs font-bold rounded">9</button>
+<button class="p-2 hover:bg-white rounded border border-slate-200">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contextual Insight Panel (Extra Premium UI Pattern) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+<div class="col-span-2 bg-surface-container-low rounded-xl p-6 border-none flex flex-col justify-center">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h3 class="font-bold text-lg">Sentinel AI Insight</h3>
+<p class="text-sm text-on-surface-variant">We've detected an 18% increase in slips and falls near the Loading Dock B area during the night shift. Recommend reviewing floor lighting and non-slip mats in that zone.</p>
+</div>
+</div>
+</div>
+<div class="bg-primary p-6 rounded-xl text-white flex flex-col justify-between">
+<div>
+<div class="text-[10px] font-bold tracking-[0.2em] opacity-80 uppercase mb-2">Next Inspection</div>
+<div class="text-xl font-bold">Fire Safety Audit</div>
+<div class="text-sm opacity-90 mt-1">Chemical Storage Area, Section 4</div>
+</div>
+<div class="mt-6 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-bold">Tomorrow, 09:00 AM</span>
+</div>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
