@@ -7,6 +7,7 @@ export type PermitWorkflowRow = {
   permit_no: string;
   work_type: string;
   area: string | null;
+  site_id?: string | null;
   requested_by: string | null;
   approved_by: string | null;
   status: string;
@@ -16,6 +17,7 @@ export type PermitWorkflowRow = {
   updated_at: string;
   description: string | null;
   contractor_name: string | null;
+  contractor_id?: string | null;
   current_step: string;
   area_manager_status: string;
   quality_status: string;
@@ -39,12 +41,20 @@ export type PermitNotificationRow = {
   created_at: string;
 };
 
+export type PermitMetaPayload = {
+  permitTypes: Array<{ value: string; label: string }>;
+  contractors: Array<{ id: string; full_name: string; employee_no: string | null }>;
+  sites: Array<{ id: string; name: string; code: string | null }>;
+  nextPermitNo: string;
+};
+
 type CreatePermitPayload = {
-  permit_no: string;
   work_type: string;
   area?: string | null;
+  site_id?: string | null;
   description?: string | null;
   contractor_name?: string | null;
+  contractor_id?: string | null;
   requested_by?: string | null;
   valid_from?: string | null;
   valid_to?: string | null;
@@ -125,6 +135,68 @@ function getNextStep(step: WorkflowStep): WorkflowStep | null {
   return workflowOrder[index + 1] ?? null;
 }
 
+async function generateNextPermitNo() {
+  const year = new Date().getFullYear();
+  const prefix = `PTW-${year}-`;
+  const { data, error } = await supabaseAdmin
+    .from("permits_to_work")
+    .select("permit_no")
+    .ilike("permit_no", `${prefix}%`)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    throw error;
+  }
+
+  const maxSerial = (data || []).reduce((max, row) => {
+    const match = String(row.permit_no).match(/(\d+)$/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+
+  return `${prefix}${String(maxSerial + 1).padStart(4, "0")}`;
+}
+
+export async function getPermitWorkflowMetadata() {
+  const nextPermitNo = await generateNextPermitNo();
+
+  const [{ data: contractors, error: contractorsError }, { data: sites, error: sitesError }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("employees_contractors")
+        .select("id, full_name, employee_no, employer_type")
+        .ilike("employer_type", "%contract%")
+        .order("full_name", { ascending: true }),
+      supabaseAdmin.from("site_locations").select("id, name, code").order("name", { ascending: true })
+    ]);
+
+  if (contractorsError) {
+    throw contractorsError;
+  }
+
+  if (sitesError) {
+    throw sitesError;
+  }
+
+  return {
+    permitTypes: [
+      { value: "Hot Work", label: "عمل ساخن" },
+      { value: "Cold Work", label: "عمل بارد" },
+      { value: "Confined Space", label: "مكان مغلق" },
+      { value: "Work at Height", label: "العمل على ارتفاع" },
+      { value: "Excavation", label: "الحفر" },
+      { value: "Electrical Isolation", label: "عزل كهربائي" }
+    ],
+    contractors: (contractors || []).map((contractor) => ({
+      id: contractor.id,
+      full_name: contractor.full_name,
+      employee_no: contractor.employee_no
+    })),
+    sites: (sites || []) as Array<{ id: string; name: string; code: string | null }>,
+    nextPermitNo
+  } satisfies PermitMetaPayload;
+}
+
 export async function listPermitsToWorkRows() {
   const { data, error } = await supabaseAdmin
     .from("permits_to_work")
@@ -143,12 +215,35 @@ export async function createPermitToWorkWorkflow(
   user: AuthenticatedUser,
   payload: CreatePermitPayload
 ) {
+  const permitNo = await generateNextPermitNo();
+  const selectedSite = payload.site_id
+    ? await supabaseAdmin.from("site_locations").select("id, name").eq("id", payload.site_id).single()
+    : null;
+
+  if (selectedSite?.error) {
+    throw selectedSite.error;
+  }
+
+  const selectedContractor = payload.contractor_id
+    ? await supabaseAdmin
+        .from("employees_contractors")
+        .select("id, full_name")
+        .eq("id", payload.contractor_id)
+        .single()
+    : null;
+
+  if (selectedContractor?.error) {
+    throw selectedContractor.error;
+  }
+
   const insertPayload = {
-    permit_no: payload.permit_no,
+    permit_no: permitNo,
     work_type: payload.work_type,
-    area: payload.area ?? null,
+    area: selectedSite?.data?.name || (payload.area ?? null),
+    site_id: payload.site_id ?? null,
     description: payload.description ?? null,
-    contractor_name: payload.contractor_name ?? null,
+    contractor_name: selectedContractor?.data?.full_name || (payload.contractor_name ?? null),
+    contractor_id: payload.contractor_id ?? null,
     requested_by: payload.requested_by ?? user.id,
     status: "submitted",
     current_step: "area_manager",

@@ -32,8 +32,10 @@ export type PermitToWorkRow = {
   permit_no: string;
   work_type: string;
   area: string | null;
+  site_id?: string | null;
   description: string | null;
   contractor_name: string | null;
+  contractor_id?: string | null;
   requested_by: string | null;
   approved_by: string | null;
   status: string;
@@ -62,6 +64,13 @@ export type PermitNotificationRow = {
   created_by: string | null;
   is_read: boolean;
   created_at: string;
+};
+
+export type PermitMetaPayload = {
+  permitTypes: Array<{ value: string; label: string }>;
+  contractors: Array<{ id: string; full_name: string; employee_no: string | null }>;
+  sites: Array<{ id: string; name: string; code: string | null }>;
+  nextPermitNo: string;
 };
 
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -226,12 +235,21 @@ export async function listPermitsToWork(token: string) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow[] }>("/modules/permitsToWork", token);
 }
 
+export async function getPermitToWorkMeta(token: string) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitMetaPayload }>(
+    "/modules/permitsToWork/meta/options",
+    token
+  );
+}
+
 export async function createPermitToWorkEntry(
   token: string,
   payload: Partial<PermitToWorkRow> &
-    Pick<PermitToWorkRow, "permit_no" | "work_type"> & {
+    Pick<PermitToWorkRow, "work_type"> & {
       description?: string | null;
       contractor_name?: string | null;
+      contractor_id?: string | null;
+      site_id?: string | null;
     }
 ) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(

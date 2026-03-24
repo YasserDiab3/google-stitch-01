@@ -973,7 +973,9 @@ h2 {
   color: #19332a;
 }
 
-.risk-form input {
+.risk-form input,
+.risk-form select,
+.permit-comment textarea {
   min-height: 50px;
   border-radius: 14px;
   border: 1px solid #d7dce7;
@@ -1141,9 +1143,6 @@ h2 {
 .permit-comment textarea {
   min-height: 110px;
   resize: vertical;
-  border-radius: 16px;
-  border: 1px solid #d7dce7;
-  background: #f7f9fc;
   padding: 14px;
 }
 

@@ -10,12 +10,14 @@ import {
   fetchAllowedModules,
   fetchAllowedScreens,
   fetchCurrentUser,
+  getPermitToWorkMeta,
   listPermitNotifications,
   listRiskRegistry,
   listPermitsToWork,
   openPermitToWorkEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type PermitMetaPayload,
   type PermitNotificationRow,
   type PermitToWorkRow,
   type RiskRegistryRow
@@ -57,10 +59,9 @@ type RiskFormState = {
 type PermitTab = "all" | "pending" | "approved" | "rejected" | "closed";
 
 type PermitFormState = {
-  permitNo: string;
   workType: string;
-  area: string;
-  contractorName: string;
+  siteId: string;
+  contractorId: string;
   description: string;
   validFrom: string;
   validTo: string;
@@ -1104,16 +1105,16 @@ function PermitsToWorkModulePage({
   const [rows, setRows] = useState<PermitToWorkRow[]>([]);
   const [selectedPermitId, setSelectedPermitId] = useState("");
   const [notifications, setNotifications] = useState<PermitNotificationRow[]>([]);
+  const [meta, setMeta] = useState<PermitMetaPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [error, setError] = useState("");
   const [comment, setComment] = useState("");
   const [form, setForm] = useState<PermitFormState>({
-    permitNo: "",
     workType: "Hot Work",
-    area: "",
-    contractorName: "",
+    siteId: "",
+    contractorId: "",
     description: "",
     validFrom: "",
     validTo: ""
@@ -1156,8 +1157,18 @@ function PermitsToWorkModulePage({
     try {
       setLoading(true);
       setError("");
-      const payload = await listPermitsToWork(accessToken);
+      const [payload, metaPayload] = await Promise.all([
+        listPermitsToWork(accessToken),
+        getPermitToWorkMeta(accessToken)
+      ]);
       setRows(payload.data);
+      setMeta(metaPayload.data);
+      setForm((current) => ({
+        ...current,
+        workType: current.workType || metaPayload.data.permitTypes[0]?.value || "Hot Work",
+        siteId: current.siteId || metaPayload.data.sites[0]?.id || "",
+        contractorId: current.contractorId || metaPayload.data.contractors[0]?.id || ""
+      }));
       if (!selectedPermitId && payload.data[0]) {
         setSelectedPermitId(payload.data[0].id);
       }
@@ -1230,19 +1241,21 @@ function PermitsToWorkModulePage({
   async function handleCreatePermit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!form.permitNo.trim() || !form.workType.trim() || !form.area.trim()) {
-      setError("أدخل رقم التصريح ونوع العمل والمنطقة");
+    if (!form.workType.trim() || !form.siteId) {
+      setError("اختر نوع التصريح والموقع قبل الحفظ");
       return;
     }
 
     try {
       setSaving(true);
       setError("");
+      const selectedContractor =
+        meta?.contractors.find((contractor) => contractor.id === form.contractorId) || null;
       const payload = await createPermitToWorkEntry(accessToken, {
-        permit_no: form.permitNo.trim(),
         work_type: form.workType.trim(),
-        area: form.area.trim(),
-        contractor_name: form.contractorName.trim() || null,
+        site_id: form.siteId,
+        contractor_id: form.contractorId || null,
+        contractor_name: selectedContractor?.full_name || null,
         description: form.description.trim() || null,
         requested_by: user.id,
         valid_from: form.validFrom || null,
@@ -1252,10 +1265,9 @@ function PermitsToWorkModulePage({
       setRows((current) => [payload.data, ...current]);
       setSelectedPermitId(payload.data.id);
       setForm({
-        permitNo: "",
-        workType: "Hot Work",
-        area: "",
-        contractorName: "",
+        workType: meta?.permitTypes[0]?.value || "Hot Work",
+        siteId: meta?.sites[0]?.id || "",
+        contractorId: meta?.contractors[0]?.id || "",
         description: "",
         validFrom: "",
         validTo: ""
@@ -1380,19 +1392,38 @@ function PermitsToWorkModulePage({
             <form className="risk-form" onSubmit={handleCreatePermit}>
               <label>
                 رقم التصريح
-                <input value={form.permitNo} onChange={(event) => setForm((current) => ({ ...current, permitNo: event.target.value }))} placeholder="PTW-2026-001" />
+                <input value={meta?.nextPermitNo || "جارٍ التوليد..."} readOnly />
               </label>
               <label>
-                نوع العمل
-                <input value={form.workType} onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))} placeholder="Hot Work" />
+                نوع التصريح
+                <select value={form.workType} onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))}>
+                  {(meta?.permitTypes || []).map((permitType) => (
+                    <option key={permitType.value} value={permitType.value}>
+                      {permitType.label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
-                المنطقة
-                <input value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} placeholder="Zone A" />
+                الموقع / المنطقة
+                <select value={form.siteId} onChange={(event) => setForm((current) => ({ ...current, siteId: event.target.value }))}>
+                  {(meta?.sites || []).map((site) => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}{site.code ? ` (${site.code})` : ""}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 المقاول
-                <input value={form.contractorName} onChange={(event) => setForm((current) => ({ ...current, contractorName: event.target.value }))} placeholder="Main Contractor" />
+                <select value={form.contractorId} onChange={(event) => setForm((current) => ({ ...current, contractorId: event.target.value }))}>
+                  <option value="">بدون مقاول محدد</option>
+                  {(meta?.contractors || []).map((contractor) => (
+                    <option key={contractor.id} value={contractor.id}>
+                      {contractor.full_name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
                 وصف العمل

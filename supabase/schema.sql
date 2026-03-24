@@ -63,8 +63,10 @@ create table if not exists public.permits_to_work (
   permit_no text not null unique,
   work_type text not null,
   area text,
+  site_id uuid,
   description text,
   contractor_name text,
+  contractor_id uuid references public.employees_contractors(id),
   requested_by uuid references public.profiles(id),
   approved_by uuid references public.profiles(id),
   status text not null default 'submitted',
@@ -83,6 +85,22 @@ create table if not exists public.permits_to_work (
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+create table if not exists public.site_locations (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  code text unique,
+  is_active boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+alter table public.permits_to_work
+  drop constraint if exists permits_to_work_site_id_fkey;
+
+alter table public.permits_to_work
+  add constraint permits_to_work_site_id_fkey
+  foreign key (site_id) references public.site_locations(id);
 
 create table if not exists public.permit_notifications (
   id uuid primary key default gen_random_uuid(),
@@ -208,6 +226,7 @@ alter table public.profiles enable row level security;
 alter table public.risk_registry enable row level security;
 alter table public.permits_to_work enable row level security;
 alter table public.permit_notifications enable row level security;
+alter table public.site_locations enable row level security;
 alter table public.employees_contractors enable row level security;
 alter table public.chemical_inventory enable row level security;
 alter table public.training_records enable row level security;

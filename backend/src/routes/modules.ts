@@ -13,6 +13,7 @@ import {
   createPermitToWorkWorkflow,
   decidePermitToWork,
   exportPermitToWork,
+  getPermitWorkflowMetadata,
   listPermitNotifications,
   listPermitsToWorkRows,
   openPermitToWork
@@ -44,6 +45,21 @@ modulesRouter.get("/:moduleKey", async (request, response, next) => {
     const data =
       moduleKey === "permitsToWork" ? await listPermitsToWorkRows() : await listModuleRows(moduleKey);
     response.json({ moduleKey, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+modulesRouter.get("/permitsToWork/meta/options", async (request, response, next) => {
+  try {
+    const authRequest = request as unknown as AuthenticatedRequest;
+    if (!roleCanAccessModule(authRequest.authUser.role, "permitsToWork")) {
+      response.status(403).json({ error: "Access denied for this module" });
+      return;
+    }
+
+    const data = await getPermitWorkflowMetadata();
+    response.json({ moduleKey: "permitsToWork", data });
   } catch (error) {
     next(error);
   }
