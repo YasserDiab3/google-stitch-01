@@ -648,6 +648,21 @@ h2 {
   padding-inline-end: 4px;
 }
 
+.nav-section {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.nav-section-title {
+  padding: 6px 10px 2px;
+  color: #6f847b;
+  font-size: 0.77rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .nav-link {
   padding: 12px 14px;
   border-radius: 16px;
@@ -792,6 +807,12 @@ h2 {
   margin-bottom: 0;
 }
 
+.module-variant-count {
+  color: #6f847b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .module-kpis {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -870,6 +891,35 @@ h2 {
   border: 1px solid rgba(20, 38, 31, 0.08);
   border-radius: 20px;
   background: #fff;
+}
+
+.variant-strip {
+  display: grid;
+  gap: 14px;
+}
+
+.compact-title {
+  margin-bottom: 0;
+}
+
+.variant-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.variant-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(20, 38, 31, 0.08);
+}
+
+.variant-card span {
+  color: #60766d;
+  font-size: 0.9rem;
 }
 
 .empty-state {

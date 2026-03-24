@@ -3,7 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchAllowedModules, fetchAllowedScreens, fetchCurrentUser, type ApiUser } from "./lib/api";
 import { supabase } from "./lib/supabase";
-import { roleLabels, type ModuleItem, type StitchScreen, type UserRole } from "./data/screens";
+import { getModuleRoutes, roleLabels, type ModuleItem, type ModuleRoute, type StitchScreen, type UserRole } from "./data/screens";
 
 type AuthState = {
   user: ApiUser | null;
@@ -669,18 +669,18 @@ function ProtectedRoute({
 
 function DashboardPage({
   user,
-  screens
+  moduleRoutes
 }: {
   user: ApiUser;
-  screens: StitchScreen[];
+  moduleRoutes: ModuleRoute[];
 }) {
-  const groupedScreens = screens.reduce<Record<string, StitchScreen[]>>((accumulator, screen) => {
-    accumulator[screen.category] ??= [];
-    accumulator[screen.category].push(screen);
+  const groupedModules = moduleRoutes.reduce<Record<string, ModuleRoute[]>>((accumulator, module) => {
+    accumulator[module.category] ??= [];
+    accumulator[module.category].push(module);
     return accumulator;
   }, {});
 
-  const totalKpis = screens.reduce((count, screen) => count + screen.kpis.length, 0);
+  const totalKpis = moduleRoutes.reduce((count, module) => count + module.kpis.length, 0);
 
   return (
     <div className="content-stack">
@@ -697,11 +697,11 @@ function DashboardPage({
           </div>
         </article>
         <article className="overview-card stat-card">
-          <strong>{screens.length}</strong>
-          <span>صفحات متاحة</span>
+          <strong>{moduleRoutes.length}</strong>
+          <span>موديولات متاحة</span>
         </article>
         <article className="overview-card stat-card">
-          <strong>{Object.keys(groupedScreens).length}</strong>
+          <strong>{Object.keys(groupedModules).length}</strong>
           <span>فئات تشغيلية</span>
         </article>
         <article className="overview-card stat-card">
@@ -713,37 +713,40 @@ function DashboardPage({
       <section className="section-block">
         <div className="section-title">
           <h2>الموديولات حسب الصلاحية</h2>
-          <p>هذه القائمة تأتي من الـ backend بناءً على صلاحيات المستخدم الحالية.</p>
+          <p>تم تجميع الشاشات المتكررة داخل موديولات واضحة حتى لا يظهر التداخل في القائمة أو في العرض الرئيسي.</p>
         </div>
 
         <div className="module-collection">
-          {Object.entries(groupedScreens).map(([category, items]) => (
+          {Object.entries(groupedModules).map(([category, items]) => (
             <div className="module-group" key={category}>
               <div className="module-group-head">
                 <h3>{category}</h3>
-                <span>{items.length} صفحات</span>
+                <span>{items.length} موديولات</span>
               </div>
               <div className="module-cards">
-                {items.map((screen) => (
+                {items.map((module) => (
                   <Link
                     className="module-card"
-                    key={screen.screenId}
-                    to={`/app/modules/${screen.slug}`}
-                    style={{ "--card-accent": screen.accent } as CSSProperties}
+                    key={module.key}
+                    to={`/app/modules/${module.slug}`}
+                    style={{ "--card-accent": module.accent } as CSSProperties}
                   >
                     <div className="module-card-top">
-                      <span>{screen.platform}</span>
-                      <strong>{screen.title}</strong>
+                      <span>{module.platform}</span>
+                      <strong>{module.title}</strong>
                     </div>
-                    <p>{screen.description}</p>
+                    <p>{module.description}</p>
                     <div className="module-kpis">
-                      {screen.kpis.map((kpi) => (
+                      {module.kpis.map((kpi) => (
                         <div key={kpi.label}>
                           <strong>{kpi.value}</strong>
                           <span>{kpi.label}</span>
                         </div>
                       ))}
                     </div>
+                    {module.variants.length > 1 ? (
+                      <span className="module-variant-count">{module.variants.length} عروض مرجعية</span>
+                    ) : null}
                   </Link>
                 ))}
               </div>
@@ -757,25 +760,27 @@ function DashboardPage({
 
 function ModulePage({
   user,
-  screens
+  moduleRoutes
 }: {
   user: ApiUser;
-  screens: StitchScreen[];
+  moduleRoutes: ModuleRoute[];
 }) {
   const { slug } = useParams();
-  const screen = screens.find((item) => item.slug === slug);
+  const moduleRoute = moduleRoutes.find((item) => item.slug === slug);
 
-  if (!screen) {
+  if (!moduleRoute) {
     return (
       <div className="empty-state">
         <h2>هذه الصفحة غير متاحة لهذا الدور</h2>
-        <p>القائمة الحالية مأخوذة من الخادم ولا تشمل هذه الصفحة للمستخدم الحالي.</p>
+        <p>القائمة الحالية منظمة على مستوى الموديولات ولا تشمل هذا الرابط للمستخدم الحالي.</p>
         <Link to="/app" className="button">
           العودة إلى اللوحة الرئيسية
         </Link>
       </div>
     );
   }
+
+  const screen = moduleRoute.primaryScreen;
 
   return (
     <div className="content-stack">
@@ -791,6 +796,23 @@ function ModulePage({
           <span>{user.roleLabel || roleLabels[user.role]}</span>
         </div>
       </section>
+
+      {moduleRoute.variants.length > 1 ? (
+        <section className="variant-strip">
+          <div className="section-title compact-title">
+            <h2>نسخ وعروض مرتبطة</h2>
+            <p>هذه شاشات إضافية لنفس الموديول، لذلك تم جمعها هنا بدلاً من تكرارها في القائمة الجانبية.</p>
+          </div>
+          <div className="variant-list">
+            {moduleRoute.variants.map((variant) => (
+              <article className="variant-card" key={variant.screenId}>
+                <strong>{variant.title}</strong>
+                <span>{variant.platform}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="preview-layout">
         <article className="preview-card">
@@ -880,6 +902,13 @@ function AppShell({
     navigate("/login", { replace: true });
   }
 
+  const moduleRoutes = getModuleRoutes(session.user.role);
+  const groupedModuleRoutes = moduleRoutes.reduce<Record<string, ModuleRoute[]>>((accumulator, module) => {
+    accumulator[module.category] ??= [];
+    accumulator[module.category].push(module);
+    return accumulator;
+  }, {});
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -901,14 +930,19 @@ function AppShell({
           <Link className={location.pathname === "/app" ? "nav-link active" : "nav-link"} to="/app">
             اللوحة الرئيسية
           </Link>
-          {screens.map((screen) => (
-            <Link
-              className={location.pathname === `/app/modules/${screen.slug}` ? "nav-link active" : "nav-link"}
-              key={screen.slug}
-              to={`/app/modules/${screen.slug}`}
-            >
-              {screen.title}
-            </Link>
+          {Object.entries(groupedModuleRoutes).map(([category, items]) => (
+            <div className="nav-section" key={category}>
+              <span className="nav-section-title">{category}</span>
+              {items.map((module) => (
+                <Link
+                  className={location.pathname === `/app/modules/${module.slug}` ? "nav-link active" : "nav-link"}
+                  key={module.slug}
+                  to={`/app/modules/${module.slug}`}
+                >
+                  {module.title}
+                </Link>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -934,10 +968,10 @@ function AppShell({
 
         {!loading && !error ? (
           <Routes>
-            <Route path="/" element={<DashboardPage user={session.user} screens={screens} />} />
+            <Route path="/" element={<DashboardPage user={session.user} moduleRoutes={moduleRoutes} />} />
             <Route
               path="/modules/:slug"
-              element={<ModulePage user={session.user} screens={screens} />}
+              element={<ModulePage user={session.user} moduleRoutes={moduleRoutes} />}
             />
           </Routes>
         ) : null}

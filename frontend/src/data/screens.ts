@@ -31,6 +31,20 @@ export type ModuleItem = {
   allowedRoles: UserRole[];
 };
 
+export type ModuleRoute = {
+  key: string;
+  title: string;
+  table: string;
+  category: StitchScreen["category"];
+  slug: string;
+  description: string;
+  platform: string;
+  accent: string;
+  primaryScreen: StitchScreen;
+  variants: StitchScreen[];
+  kpis: StitchScreen["kpis"];
+};
+
 export const roleLabels: Record<UserRole, string> = {
   admin: "مدير النظام",
   ehs_manager: "مدير السلامة والبيئة",
@@ -291,4 +305,59 @@ export function getAllowedScreens(role: UserRole) {
 
 export function getAllowedModules(role: UserRole) {
   return modules.filter((module) => module.allowedRoles.includes(role));
+}
+
+function getScreenPriority(screen: StitchScreen) {
+  let score = 0;
+
+  if (screen.platform === "Web") {
+    score += 30;
+  } else if (screen.platform === "Desktop") {
+    score += 20;
+  } else if (screen.platform === "Dashboard") {
+    score += 10;
+  }
+
+  if (screen.title.includes("متعدد اللغات")) {
+    score -= 8;
+  }
+
+  if (screen.title.includes("والمواد الكيميائية")) {
+    score -= 12;
+  }
+
+  return score;
+}
+
+export function getModuleRoutes(role: UserRole): ModuleRoute[] {
+  const allowedScreens = getAllowedScreens(role);
+  const allowedModules = getAllowedModules(role);
+
+  return allowedModules
+    .map((module) => {
+      const variants = allowedScreens
+        .filter((screen) => screen.moduleKey === module.key)
+        .sort((left, right) => getScreenPriority(right) - getScreenPriority(left));
+
+      const primaryScreen = variants[0];
+
+      if (!primaryScreen) {
+        return null;
+      }
+
+      return {
+        key: module.key,
+        title: module.title,
+        table: module.table,
+        category: primaryScreen.category,
+        slug: module.key,
+        description: primaryScreen.description,
+        platform: primaryScreen.platform,
+        accent: primaryScreen.accent,
+        primaryScreen,
+        variants,
+        kpis: primaryScreen.kpis
+      } satisfies ModuleRoute;
+    })
+    .filter((route): route is ModuleRoute => Boolean(route));
 }
