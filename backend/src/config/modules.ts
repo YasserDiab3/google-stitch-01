@@ -4,7 +4,12 @@ export type UserRole =
   | "supervisor"
   | "clinic"
   | "contractor_manager"
-  | "executive";
+  | "executive"
+  | "permit_requester"
+  | "permit_approver"
+  | "area_manager"
+  | "quality"
+  | "safety";
 
 export const roleLabels: Record<UserRole, string> = {
   admin: "مدير النظام",
@@ -12,7 +17,12 @@ export const roleLabels: Record<UserRole, string> = {
   supervisor: "مشرف العمليات",
   clinic: "مسؤول العيادة",
   contractor_manager: "مسؤول المقاولين",
-  executive: "الإدارة التنفيذية"
+  executive: "الإدارة التنفيذية",
+  permit_requester: "طالب التصريح",
+  permit_approver: "معتمد التصريح",
+  area_manager: "مديرة المنطقة",
+  quality: "الجودة",
+  safety: "السلامة"
 };
 
 export const moduleCatalog = {
@@ -24,7 +34,16 @@ export const moduleCatalog = {
   permitsToWork: {
     table: "permits_to_work",
     title: "تصاريح العمل",
-    allowedRoles: ["admin", "ehs_manager", "supervisor"]
+    allowedRoles: [
+      "admin",
+      "ehs_manager",
+      "supervisor",
+      "permit_requester",
+      "permit_approver",
+      "area_manager",
+      "quality",
+      "safety"
+    ]
   },
   employees: {
     table: "employees_contractors",
@@ -118,7 +137,16 @@ export const navigationScreens: NavigationScreen[] = [
     imagePath: "/stitch/02-permits-to-work-ptw-management/screen.png",
     htmlPath: "/stitch/02-permits-to-work-ptw-management/screen.html",
     accent: "#0f766e",
-    allowedRoles: ["admin", "ehs_manager", "supervisor"],
+    allowedRoles: [
+      "admin",
+      "ehs_manager",
+      "supervisor",
+      "permit_requester",
+      "permit_approver",
+      "area_manager",
+      "quality",
+      "safety"
+    ],
     category: "Operations",
     kpis: [
       { label: "نشطة الآن", value: "13" },

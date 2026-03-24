@@ -2,16 +2,21 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  closePermitToWorkEntry,
   createRiskRegistryEntry,
   createPermitToWorkEntry,
+  decidePermitToWorkEntry,
+  exportPermitToWorkEntry,
   fetchAllowedModules,
   fetchAllowedScreens,
   fetchCurrentUser,
+  listPermitNotifications,
   listRiskRegistry,
   listPermitsToWork,
-  updatePermitToWorkEntry,
+  openPermitToWorkEntry,
   updateRiskRegistryEntry,
   type ApiUser,
+  type PermitNotificationRow,
   type PermitToWorkRow,
   type RiskRegistryRow
 } from "./lib/api";
@@ -49,12 +54,14 @@ type RiskFormState = {
   dueDate: string;
 };
 
-type PermitTab = "all" | "draft" | "active" | "closed";
+type PermitTab = "all" | "pending" | "approved" | "rejected" | "closed";
 
 type PermitFormState = {
   permitNo: string;
   workType: string;
   area: string;
+  contractorName: string;
+  description: string;
   validFrom: string;
   validTo: string;
 };
@@ -1095,54 +1102,103 @@ function PermitsToWorkModulePage({
 }) {
   const [activeTab, setActiveTab] = useState<PermitTab>("all");
   const [rows, setRows] = useState<PermitToWorkRow[]>([]);
+  const [selectedPermitId, setSelectedPermitId] = useState("");
+  const [notifications, setNotifications] = useState<PermitNotificationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [comment, setComment] = useState("");
   const [form, setForm] = useState<PermitFormState>({
     permitNo: "",
     workType: "Hot Work",
     area: "",
+    contractorName: "",
+    description: "",
     validFrom: "",
     validTo: ""
   });
 
-  useEffect(() => {
-    let active = true;
+  const workflowLabels: Record<string, string> = {
+    submitted: "?????",
+    in_review: "??? ????????",
+    approved: "?????",
+    rejected: "?????",
+    closed: "????",
+    area_manager: "????? ???????",
+    quality: "??????",
+    safety: "???????",
+    permit_approver: "????? ???????",
+    completed: "?????",
+    pending: "???????",
+    requester: "???? ???????",
+    permit_requester: "???? ???????"
+  };
 
-    async function loadPermits() {
-      try {
-        setLoading(true);
-        setError("");
-        const payload = await listPermitsToWork(accessToken);
-        if (!active) {
-          return;
-        }
-        setRows(payload.data);
-      } catch (loadError) {
-        if (!active) {
-          return;
-        }
-        setError(loadError instanceof Error ? loadError.message : "تعذر تحميل تصاريح العمل");
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+  const actorStepByRole: Partial<Record<UserRole, string>> = {
+    admin: "admin",
+    ehs_manager: "safety",
+    supervisor: "permit_approver",
+    permit_approver: "permit_approver",
+    area_manager: "area_manager",
+    quality: "quality",
+    safety: "safety"
+  };
+
+  const canCreatePermit = ["admin", "permit_requester", "supervisor", "ehs_manager"].includes(user.role);
+  const selectedPermit = rows.find((row) => row.id === selectedPermitId) || null;
+
+  function replacePermit(nextRow: PermitToWorkRow) {
+    setRows((current) => current.map((row) => (row.id === nextRow.id ? nextRow : row)));
+  }
+
+  async function loadPermits() {
+    try {
+      setLoading(true);
+      setError("");
+      const payload = await listPermitsToWork(accessToken);
+      setRows(payload.data);
+      if (!selectedPermitId && payload.data[0]) {
+        setSelectedPermitId(payload.data[0].id);
       }
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "???? ????? ?????? ?????");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  async function loadNotifications(permitId: string) {
+    try {
+      setNotificationsLoading(true);
+      const payload = await listPermitNotifications(accessToken, permitId);
+      setNotifications(payload.data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "???? ????? ?????????");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }
+
+  useEffect(() => {
     void loadPermits();
-
-    return () => {
-      active = false;
-    };
   }, [accessToken]);
 
-  const filteredRows = rows.filter((row) => {
-    if (activeTab === "draft") {
-      return row.status === "draft";
+  useEffect(() => {
+    if (selectedPermitId) {
+      void loadNotifications(selectedPermitId);
     }
-    if (activeTab === "active") {
-      return row.status === "active";
+  }, [selectedPermitId]);
+
+  const filteredRows = rows.filter((row) => {
+    if (activeTab === "pending") {
+      return ["submitted", "in_review"].includes(row.status);
+    }
+    if (activeTab === "approved") {
+      return row.status === "approved";
+    }
+    if (activeTab === "rejected") {
+      return row.status === "rejected";
     }
     if (activeTab === "closed") {
       return row.status === "closed";
@@ -1150,15 +1206,32 @@ function PermitsToWorkModulePage({
     return true;
   });
 
-  const activeCount = rows.filter((row) => row.status === "active").length;
-  const draftCount = rows.filter((row) => row.status === "draft").length;
+  const pendingCount = rows.filter((row) => ["submitted", "in_review"].includes(row.status)).length;
+  const approvedCount = rows.filter((row) => row.status === "approved").length;
+  const rejectedCount = rows.filter((row) => row.status === "rejected").length;
   const closedCount = rows.filter((row) => row.status === "closed").length;
+
+  function canApprove(row: PermitToWorkRow) {
+    if (user.role === "admin") {
+      return ["submitted", "in_review"].includes(row.status) && row.current_step !== "completed";
+    }
+
+    return ["submitted", "in_review"].includes(row.status) && actorStepByRole[user.role] === row.current_step;
+  }
+
+  function canClose(row: PermitToWorkRow) {
+    return ["admin", "permit_approver", "supervisor", "ehs_manager"].includes(user.role) && ["approved", "closed"].includes(row.status);
+  }
+
+  function canExport(row: PermitToWorkRow) {
+    return ["approved", "closed"].includes(row.status);
+  }
 
   async function handleCreatePermit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!form.permitNo.trim() || !form.workType.trim()) {
-      setError("أدخل رقم التصريح ونوع العمل");
+    if (!form.permitNo.trim() || !form.workType.trim() || !form.area.trim()) {
+      setError("???? ??? ??????? ???? ????? ????????");
       return;
     }
 
@@ -1168,41 +1241,95 @@ function PermitsToWorkModulePage({
       const payload = await createPermitToWorkEntry(accessToken, {
         permit_no: form.permitNo.trim(),
         work_type: form.workType.trim(),
-        area: form.area.trim() || null,
+        area: form.area.trim(),
+        contractor_name: form.contractorName.trim() || null,
+        description: form.description.trim() || null,
         requested_by: user.id,
-        status: "draft",
         valid_from: form.validFrom || null,
         valid_to: form.validTo || null
       });
 
       setRows((current) => [payload.data, ...current]);
+      setSelectedPermitId(payload.data.id);
       setForm({
         permitNo: "",
         workType: "Hot Work",
         area: "",
+        contractorName: "",
+        description: "",
         validFrom: "",
         validTo: ""
       });
-      setActiveTab("all");
+      setActiveTab("pending");
+      await loadNotifications(payload.data.id);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "تعذر إنشاء تصريح العمل");
+      setError(saveError instanceof Error ? saveError.message : "???? ????? ????? ?????");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handlePermitStatus(row: PermitToWorkRow, status: string) {
+  async function handleOpenPermit(row: PermitToWorkRow) {
     try {
       setSaving(true);
       setError("");
-      const payload = await updatePermitToWorkEntry(accessToken, row.id, {
-        status,
-        approved_by: status === "active" ? user.id : row.approved_by
-      });
+      const payload = await openPermitToWorkEntry(accessToken, row.id);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      await loadNotifications(row.id);
+    } catch (openError) {
+      setError(openError instanceof Error ? openError.message : "???? ??? ???????");
+    } finally {
+      setSaving(false);
+    }
+  }
 
-      setRows((current) => current.map((item) => (item.id === row.id ? payload.data : item)));
-    } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : "تعذر تحديث التصريح");
+  async function handleDecision(row: PermitToWorkRow, action: "approve" | "reject") {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await decidePermitToWorkEntry(accessToken, row.id, action, action === "reject" ? comment : undefined);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      setComment("");
+      await loadNotifications(row.id);
+    } catch (decisionError) {
+      setError(decisionError instanceof Error ? decisionError.message : "???? ????? ???? ????????");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClosePermit(row: PermitToWorkRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const payload = await closePermitToWorkEntry(accessToken, row.id);
+      replacePermit(payload.data);
+      setSelectedPermitId(row.id);
+      await loadNotifications(row.id);
+    } catch (closeError) {
+      setError(closeError instanceof Error ? closeError.message : "???? ????? ???????");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleExportPermit(row: PermitToWorkRow) {
+    try {
+      setSaving(true);
+      setError("");
+      const file = await exportPermitToWorkEntry(accessToken, row.id);
+      const url = URL.createObjectURL(file.blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      await loadPermits();
+      await loadNotifications(row.id);
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : "???? ????? ???????");
     } finally {
       setSaving(false);
     }
@@ -1225,142 +1352,182 @@ function PermitsToWorkModulePage({
 
       <section className="risk-toolbar-card">
         <div className="risk-tabs">
-          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>
-            كل التصاريح
-          </button>
-          <button className={activeTab === "draft" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("draft")}>
-            مسودة
-          </button>
-          <button className={activeTab === "active" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("active")}>
-            نشطة
-          </button>
-          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>
-            مغلقة
-          </button>
+          <button className={activeTab === "all" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("all")}>?? ????????</button>
+          <button className={activeTab === "pending" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("pending")}>??????? ????????</button>
+          <button className={activeTab === "approved" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("approved")}>????????</button>
+          <button className={activeTab === "rejected" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("rejected")}>????????</button>
+          <button className={activeTab === "closed" ? "risk-tab active" : "risk-tab"} type="button" onClick={() => setActiveTab("closed")}>???????</button>
         </div>
 
         <div className="risk-summary-grid">
-          <article className="risk-summary-card">
-            <strong>{rows.length}</strong>
-            <span>إجمالي التصاريح</span>
-          </article>
-          <article className="risk-summary-card">
-            <strong>{activeCount}</strong>
-            <span>نشطة</span>
-          </article>
-          <article className="risk-summary-card">
-            <strong>{draftCount}</strong>
-            <span>مسودة</span>
-          </article>
-          <article className="risk-summary-card">
-            <strong>{closedCount}</strong>
-            <span>مغلقة</span>
-          </article>
+          <article className="risk-summary-card"><strong>{rows.length}</strong><span>?????? ????????</span></article>
+          <article className="risk-summary-card"><strong>{pendingCount}</strong><span>?? ????? ????????</span></article>
+          <article className="risk-summary-card"><strong>{approvedCount}</strong><span>?????? ??????</span></article>
+          <article className="risk-summary-card"><strong>{rejectedCount + closedCount}</strong><span>?????? ?? ?????</span></article>
         </div>
       </section>
 
-      <section className="risk-layout">
-        <article className="preview-card risk-form-card">
-          <div className="card-head">
-            <h3>إصدار تصريح جديد</h3>
-          </div>
+      {error ? <div className="form-error">{error}</div> : null}
 
-          <form className="risk-form" onSubmit={handleCreatePermit}>
-            <label>
-              رقم التصريح
-              <input
-                value={form.permitNo}
-                onChange={(event) => setForm((current) => ({ ...current, permitNo: event.target.value }))}
-                placeholder="PTW-2026-001"
-              />
-            </label>
-            <label>
-              نوع العمل
-              <input
-                value={form.workType}
-                onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))}
-                placeholder="Hot Work"
-              />
-            </label>
-            <label>
-              المنطقة
-              <input
-                value={form.area}
-                onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))}
-                placeholder="Zone A"
-              />
-            </label>
-            <div className="risk-form-grid">
-              <label>
-                صالح من
-                <input
-                  type="datetime-local"
-                  value={form.validFrom}
-                  onChange={(event) => setForm((current) => ({ ...current, validFrom: event.target.value }))}
-                />
-              </label>
-              <label>
-                صالح إلى
-                <input
-                  type="datetime-local"
-                  value={form.validTo}
-                  onChange={(event) => setForm((current) => ({ ...current, validTo: event.target.value }))}
-                />
-              </label>
+      <section className="risk-layout permit-layout">
+        {canCreatePermit ? (
+          <article className="preview-card risk-form-card">
+            <div className="card-head">
+              <h3>????? ????? ????</h3>
+              <span>???? ??????? ???? ?????? ?? ????? ???????? ??? ??????????.</span>
             </div>
 
-            <button className="button" type="submit" disabled={saving}>
-              {saving ? "جارٍ الإصدار..." : "إضافة التصريح"}
-            </button>
-          </form>
-        </article>
+            <form className="risk-form" onSubmit={handleCreatePermit}>
+              <label>
+                ??? ???????
+                <input value={form.permitNo} onChange={(event) => setForm((current) => ({ ...current, permitNo: event.target.value }))} placeholder="PTW-2026-001" />
+              </label>
+              <label>
+                ??? ?????
+                <input value={form.workType} onChange={(event) => setForm((current) => ({ ...current, workType: event.target.value }))} placeholder="Hot Work" />
+              </label>
+              <label>
+                ???????
+                <input value={form.area} onChange={(event) => setForm((current) => ({ ...current, area: event.target.value }))} placeholder="Zone A" />
+              </label>
+              <label>
+                ???????
+                <input value={form.contractorName} onChange={(event) => setForm((current) => ({ ...current, contractorName: event.target.value }))} placeholder="Main Contractor" />
+              </label>
+              <label>
+                ??? ?????
+                <input value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="??? ????? ????? ?????" />
+              </label>
+              <div className="risk-form-grid">
+                <label>
+                  ???? ??
+                  <input type="datetime-local" value={form.validFrom} onChange={(event) => setForm((current) => ({ ...current, validFrom: event.target.value }))} />
+                </label>
+                <label>
+                  ???? ???
+                  <input type="datetime-local" value={form.validTo} onChange={(event) => setForm((current) => ({ ...current, validTo: event.target.value }))} />
+                </label>
+              </div>
+
+              <button className="button" type="submit" disabled={saving}>
+                {saving ? "???? ????? ???????..." : "????? ???????"}
+              </button>
+            </form>
+          </article>
+        ) : (
+          <article className="preview-card risk-form-card">
+            <div className="card-head">
+              <h3>????? ????????</h3>
+            </div>
+            <div className="permit-workflow-list">
+              <div className="permit-workflow-step active">1. ???? ???????</div>
+              <div className="permit-workflow-step">2. ????? ???????</div>
+              <div className="permit-workflow-step">3. ??????</div>
+              <div className="permit-workflow-step">4. ???????</div>
+              <div className="permit-workflow-step">5. ????? ???????</div>
+            </div>
+          </article>
+        )}
 
         <article className="preview-card risk-table-card">
           <div className="card-head">
-            <h3>تصاريح العمل</h3>
-            <span>{activeTab === "all" ? "عرض شامل" : "عرض مفلتر"}</span>
+            <h3>??? ????????</h3>
+            <span>{activeTab === "all" ? "??? ????" : "??? ??? ??????"}</span>
           </div>
 
-          {error ? <div className="form-error">{error}</div> : null}
-          {loading ? <div className="empty-state">جارٍ تحميل التصاريح...</div> : null}
+          {loading ? <div className="empty-state">???? ????? ?????? ?????...</div> : null}
 
           {!loading ? (
             <div className="risk-table">
               <div className="risk-table-head permit-table-head">
-                <span>رقم التصريح</span>
-                <span>نوع العمل</span>
-                <span>المنطقة</span>
-                <span>الحالة</span>
-                <span>الصلاحية</span>
-                <span>إجراء</span>
+                <span>??? ???????</span>
+                <span>??? ?????</span>
+                <span>???????</span>
+                <span>??????</span>
+                <span>????? ??????</span>
+                <span>?????</span>
               </div>
               {filteredRows.map((row) => (
-                <div className="risk-row permit-row" key={row.id}>
+                <div className={`risk-row permit-row ${selectedPermitId === row.id ? "selected" : ""}`} key={row.id}>
                   <strong>{row.permit_no}</strong>
                   <span>{row.work_type}</span>
                   <span>{row.area || "-"}</span>
-                  <span className={`risk-status risk-status-${row.status}`}>{row.status}</span>
-                  <span>{row.valid_to ? new Date(row.valid_to).toLocaleString() : "-"}</span>
+                  <span className={`risk-status risk-status-${row.status}`}>{workflowLabels[row.status] || row.status}</span>
+                  <span>{workflowLabels[row.current_step] || row.current_step}</span>
                   <div className="risk-actions">
-                    {row.status === "draft" ? (
-                      <button type="button" onClick={() => void handlePermitStatus(row, "active")}>
-                        اعتماد
-                      </button>
-                    ) : null}
-                    {row.status !== "closed" ? (
-                      <button type="button" onClick={() => void handlePermitStatus(row, "closed")}>
-                        إغلاق
-                      </button>
-                    ) : null}
-                    {row.status === "closed" ? (
-                      <button type="button" onClick={() => void handlePermitStatus(row, "active")}>
-                        إعادة تفعيل
-                      </button>
-                    ) : null}
+                    <button type="button" onClick={() => void handleOpenPermit(row)}>???</button>
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "approve")}>??????</button> : null}
+                    {canApprove(row) ? <button type="button" onClick={() => void handleDecision(row, "reject")}>???</button> : null}
+                    {canClose(row) && row.status !== "closed" ? <button type="button" onClick={() => void handleClosePermit(row)}>?????</button> : null}
+                    {canExport(row) ? <button type="button" onClick={() => void handleExportPermit(row)}>?????</button> : null}
                   </div>
                 </div>
               ))}
-              {!filteredRows.length ? <div className="empty-state">لا توجد تصاريح مطابقة لهذا التبويب.</div> : null}
+              {!filteredRows.length ? <div className="empty-state">?? ???? ?????? ?????? ???? ???????.</div> : null}
+            </div>
+          ) : null}
+        </article>
+      </section>
+
+      <section className="permit-detail-grid">
+        <article className="preview-card permit-detail-card">
+          <div className="card-head">
+            <h3>?????? ???????</h3>
+            <span>{selectedPermit ? selectedPermit.permit_no : "???? ??????? ?? ?????"}</span>
+          </div>
+
+          {selectedPermit ? (
+            <div className="permit-detail-stack">
+              <div className="permit-detail-meta">
+                <div><strong>??? ?????:</strong> <span>{selectedPermit.work_type}</span></div>
+                <div><strong>???????:</strong> <span>{selectedPermit.area || "-"}</span></div>
+                <div><strong>???????:</strong> <span>{selectedPermit.contractor_name || "-"}</span></div>
+                <div><strong>?????:</strong> <span>{selectedPermit.description || "-"}</span></div>
+                <div><strong>??????:</strong> <span>{workflowLabels[selectedPermit.status] || selectedPermit.status}</span></div>
+                <div><strong>??? ????:</strong> <span>{workflowLabels[selectedPermit.current_step] || selectedPermit.current_step}</span></div>
+                <div><strong>???? ???:</strong> <span>{selectedPermit.valid_to ? new Date(selectedPermit.valid_to).toLocaleString() : "-"}</span></div>
+                <div><strong>?? ???????:</strong> <span>{selectedPermit.exported_at ? new Date(selectedPermit.exported_at).toLocaleString() : "??"}</span></div>
+              </div>
+
+              <div className="permit-workflow-list">
+                <div className={`permit-workflow-step ${selectedPermit.area_manager_status}`}>????? ???????: {workflowLabels[selectedPermit.area_manager_status] || selectedPermit.area_manager_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.quality_status}`}>??????: {workflowLabels[selectedPermit.quality_status] || selectedPermit.quality_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.safety_status}`}>???????: {workflowLabels[selectedPermit.safety_status] || selectedPermit.safety_status}</div>
+                <div className={`permit-workflow-step ${selectedPermit.permit_approver_status}`}>????? ???????: {workflowLabels[selectedPermit.permit_approver_status] || selectedPermit.permit_approver_status}</div>
+              </div>
+
+              {canApprove(selectedPermit) ? (
+                <label className="permit-comment">
+                  ??? ????? ?? ?????? ????????
+                  <textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="???? ?????? ?????? ???? ?? ??? ????????? ??? ??????" />
+                </label>
+              ) : null}
+
+              {selectedPermit.rejection_reason ? <div className="form-error permit-inline-note">{selectedPermit.rejection_reason}</div> : null}
+            </div>
+          ) : (
+            <div className="empty-state">???? ??????? ?? ?????? ???? ?????????? ??????????.</div>
+          )}
+        </article>
+
+        <article className="preview-card permit-detail-card">
+          <div className="card-head">
+            <h3>????????? ????????</h3>
+            <span>{notifications.length} ???</span>
+          </div>
+
+          {notificationsLoading ? <div className="empty-state">???? ????? ?????????...</div> : null}
+
+          {!notificationsLoading ? (
+            <div className="permit-notification-list">
+              {notifications.map((notification) => (
+                <div className="permit-notification-item" key={notification.id}>
+                  <strong>{notification.message}</strong>
+                  <span>{workflowLabels[notification.recipient_role] || notification.recipient_role}</span>
+                  <small>{new Date(notification.created_at).toLocaleString()}</small>
+                </div>
+              ))}
+              {!notifications.length ? <div className="empty-state">?? ???? ??????? ???? ??????? ???.</div> : null}
             </div>
           ) : null}
         </article>

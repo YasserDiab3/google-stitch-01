@@ -32,13 +32,36 @@ export type PermitToWorkRow = {
   permit_no: string;
   work_type: string;
   area: string | null;
+  description: string | null;
+  contractor_name: string | null;
   requested_by: string | null;
   approved_by: string | null;
   status: string;
+  current_step: string;
+  area_manager_status: string;
+  quality_status: string;
+  safety_status: string;
+  permit_approver_status: string;
+  rejection_reason: string | null;
+  opened_at: string | null;
+  opened_by: string | null;
+  final_approved_at: string | null;
+  exported_at: string | null;
   valid_from: string | null;
   valid_to: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type PermitNotificationRow = {
+  id: string;
+  permit_id: string;
+  event_type: string;
+  recipient_role: string;
+  message: string;
+  created_by: string | null;
+  is_read: boolean;
+  created_at: string;
 };
 
 async function apiFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
@@ -50,8 +73,7 @@ async function apiFetch<T>(path: string, token: string, init?: RequestInit): Pro
     ...init,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-      ,
+      Authorization: `Bearer ${token}`,
       ...(init?.headers || {})
     }
   });
@@ -73,6 +95,26 @@ function inferRoleFromEmail(email: string): UserRole {
 
   if (normalizedEmail.includes("clinic")) {
     return "clinic";
+  }
+
+  if (normalizedEmail.includes("request")) {
+    return "permit_requester";
+  }
+
+  if (normalizedEmail.includes("approver")) {
+    return "permit_approver";
+  }
+
+  if (normalizedEmail.includes("quality")) {
+    return "quality";
+  }
+
+  if (normalizedEmail.includes("safety")) {
+    return "safety";
+  }
+
+  if (normalizedEmail.includes("area")) {
+    return "area_manager";
   }
 
   if (normalizedEmail.includes("contract")) {
@@ -186,7 +228,11 @@ export async function listPermitsToWork(token: string) {
 
 export async function createPermitToWorkEntry(
   token: string,
-  payload: Partial<PermitToWorkRow> & Pick<PermitToWorkRow, "permit_no" | "work_type">
+  payload: Partial<PermitToWorkRow> &
+    Pick<PermitToWorkRow, "permit_no" | "work_type"> & {
+      description?: string | null;
+      contractor_name?: string | null;
+    }
 ) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
     "/modules/permitsToWork",
@@ -198,17 +244,71 @@ export async function createPermitToWorkEntry(
   );
 }
 
-export async function updatePermitToWorkEntry(
-  token: string,
-  id: string,
-  payload: Partial<PermitToWorkRow>
-) {
+export async function openPermitToWorkEntry(token: string, id: string) {
   return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
-    `/modules/permitsToWork/${id}`,
+    `/modules/permitsToWork/${id}/open`,
     token,
     {
-      method: "PATCH",
-      body: JSON.stringify(payload)
+      method: "POST"
     }
+  );
+}
+
+export async function decidePermitToWorkEntry(
+  token: string,
+  id: string,
+  action: "approve" | "reject",
+  comment?: string
+) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
+    `/modules/permitsToWork/${id}/decision`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ action, comment })
+    }
+  );
+}
+
+export async function closePermitToWorkEntry(token: string, id: string) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitToWorkRow }>(
+    `/modules/permitsToWork/${id}/close`,
+    token,
+    {
+      method: "POST"
+    }
+  );
+}
+
+export async function exportPermitToWorkEntry(token: string, id: string) {
+  if (backendIsPlaceholder) {
+    throw new Error("Backend unavailable");
+  }
+
+  const response = await fetch(`${apiBaseUrl}/modules/permitsToWork/${id}/export`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || "API request failed");
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") || "";
+  const filenameMatch = disposition.match(/filename=\"?([^"]+)\"?/i);
+
+  return {
+    blob,
+    filename: filenameMatch?.[1] || "permit-export.csv"
+  };
+}
+
+export async function listPermitNotifications(token: string, id: string) {
+  return apiFetch<{ moduleKey: "permitsToWork"; data: PermitNotificationRow[] }>(
+    `/modules/permitsToWork/${id}/notifications`,
+    token
   );
 }

@@ -63,13 +63,36 @@ create table if not exists public.permits_to_work (
   permit_no text not null unique,
   work_type text not null,
   area text,
+  description text,
+  contractor_name text,
   requested_by uuid references public.profiles(id),
   approved_by uuid references public.profiles(id),
-  status text not null default 'draft',
+  status text not null default 'submitted',
+  current_step text not null default 'area_manager',
+  area_manager_status text not null default 'pending',
+  quality_status text not null default 'pending',
+  safety_status text not null default 'pending',
+  permit_approver_status text not null default 'pending',
+  rejection_reason text,
+  opened_at timestamptz,
+  opened_by uuid references public.profiles(id),
+  final_approved_at timestamptz,
+  exported_at timestamptz,
   valid_from timestamptz,
   valid_to timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.permit_notifications (
+  id uuid primary key default gen_random_uuid(),
+  permit_id uuid not null references public.permits_to_work(id) on delete cascade,
+  event_type text not null,
+  recipient_role text not null,
+  message text not null,
+  created_by uuid references public.profiles(id),
+  is_read boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now())
 );
 
 create table if not exists public.employees_contractors (
@@ -184,6 +207,7 @@ for each row execute function public.set_updated_at();
 alter table public.profiles enable row level security;
 alter table public.risk_registry enable row level security;
 alter table public.permits_to_work enable row level security;
+alter table public.permit_notifications enable row level security;
 alter table public.employees_contractors enable row level security;
 alter table public.chemical_inventory enable row level security;
 alter table public.training_records enable row level security;
